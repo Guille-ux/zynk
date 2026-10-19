@@ -6,10 +6,7 @@ else
 fi
 
 for (let i=0;i<10;i=i+1) do
-	echo hola + "Vez nº " + i
+	echo hola + " - Vez nº " + i
 done
-
-let donner = 10
-echo donner
 
 echo hola

@@ -179,6 +179,7 @@ Token lexer_next_token() {
 		 * Patterns, son tokens internos, por ejemplo para break
 		 * xD
 		 */
+		if (pattern("del")) return newToken(TOKEN_DEL, "del", 3);
 		if (pattern("for")) return newToken(TOKEN_FOR, "for", 3);
 		if (pattern("break")) return newToken(TOKEN_BREAK, "break", 5);
 		if (pattern("if")) return newToken(TOKEN_IF, "if", 2);
