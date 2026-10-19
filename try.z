@@ -1,0 +1,12 @@
+let hola
+if 10 > 5 then
+	hola = "A ESTUDIAR TECNO DE UNA VEZ!"
+else
+	hola = "wtf?"
+fi
+
+for (let i=0;i<10;i=i+1) do
+	echo hola + "Vez nº " + i
+done
+
+echo hola

@@ -18,6 +18,7 @@ static int evalIf(ASTNode *stmt, EvalCtx *ctx);
 static int evalWhile(ASTNode *stmt, EvalCtx *ctx);
 static int evalFor(ASTNode *stmt, EvalCtx *ctx);
 static int evalEcho(ASTNode *stmt, EvalCtx *ctx);
+static int evalVarDef(ASTNode *stmt, EvalCtx *ctx);
 
 #define EVAL_OK 0
 #define EVAL_ERR 1
@@ -30,6 +31,11 @@ ShellValue newNumVal(long num) {
 	val.type = VAL_NUMBER;
 	val.as.num = num;
 	return val;
+}
+
+uint32_t zhash(char *name) {
+	// de momento siempre 0
+	return 0;
 }
 
 ShellValue newStrVal(const char *str) {
@@ -106,7 +112,16 @@ void killShellCtx(EvalCtx *ctx) {
 
 Var *getShellVarEntry(EvalCtx *ctx, char *name) {
 	size_t id=0;
+	size_t s_val = zhash(name) % ctx->var_cap;
+	bool done = false;
+	if (ctx->var_table[s_val].name != NULL) {
+		if (strcmp(ctx->var_table[s_val].name, name)==0) {
+			id = s_val;
+			done = true;
+		}
+	}
 	for (size_t i=0;i<ctx->var_cap;i++) {	
+		if (done) break;
 		if (ctx->var_table[i].name==NULL) continue;
 		if (strcmp(name, ctx->var_table[i].name)==0) {
 			id=i;
@@ -119,18 +134,20 @@ Var *getShellVarEntry(EvalCtx *ctx, char *name) {
 	}
 	return &ctx->var_table[id];
 }
-
-void setShellVarEntry(EvalCtx *ctx, char *name, ShellValue val) {
+void defShellVarEntry(EvalCtx *ctx, char *name, ShellValue val) {
 	size_t id=ctx->var_cap+1;
 	size_t fid=ctx->var_cap+1;
+	size_t s_val = zhash(name) % ctx->var_cap;
+	bool done = false;
+	if (!ctx->var_table[s_val].is_set) {
+		id = s_val;
+		done = true;
+	}
 	for (size_t i=0;i<ctx->var_cap;i++) {
-		if (!(ctx->var_table[i].name==NULL)) {
-			if (strcmp(ctx->var_table[i].name, name)==0) {
-				id=i;
-				break;
-			}
-		} else if (!ctx->var_table[i].is_set) {
+		if (done) break;
+		if (!ctx->var_table[i].is_set) {
 			fid=i;
+			break;
 		}
 	}
 	
@@ -149,6 +166,39 @@ void setShellVarEntry(EvalCtx *ctx, char *name, ShellValue val) {
 		kfree(ctx->var_table);
 		ctx->var_cap=new_cap;
 		ctx->var_table = new_table;
+	}
+	ref_del(ctx->var_table[id].val);	
+	ctx->var_table[id] = (Var){.val=ref_add(val), .is_exported=false, .is_set=true};
+	ctx->var_table[id].name = name;
+}
+
+void setShellVarEntry(EvalCtx *ctx, char *name, ShellValue val) {
+	size_t id=ctx->var_cap+1;
+	size_t fid=ctx->var_cap+1;
+	size_t s_val = zhash(name) % ctx->var_cap;
+	bool done = false;
+	if (ctx->var_table[s_val].name != NULL) {
+		if (strcmp(ctx->var_table[s_val].name, name)==0) {
+			id = s_val;
+			done = true;
+		}
+	}
+	for (size_t i=0;i<ctx->var_cap;i++) {
+		if (done) break;
+		if (!(ctx->var_table[i].name==NULL)) {
+			if (strcmp(ctx->var_table[i].name, name)==0) {
+				id=i;
+				break;
+			}
+		}
+	}
+	
+	
+	if (id>=ctx->var_cap) {
+		id=fid; // x si encontramos espacio libre
+	}
+	if (id >= ctx->var_cap) {
+		kprintf("Err -> Var isn't defined yet!\n");
 	}
 	ref_del(ctx->var_table[id].val);	
 	ctx->var_table[id] = (Var){.val=ref_add(val), .is_exported=false, .is_set=true};
@@ -221,6 +271,7 @@ static int evalStatement(ASTNode *stmt, EvalCtx *ctx) {
 
 
 	switch (stmt->type) {
+		case VAR_DEF: return evalVarDef(stmt, ctx);
 		case NODE_ASSIGNMENT: return evalAssignment(stmt, ctx);
 		case NODE_COMMAND_CALL: return evalCommandCall(stmt, ctx);
 		case NODE_IF: return evalIf(stmt, ctx);
@@ -243,6 +294,12 @@ static int evalStatement(ASTNode *stmt, EvalCtx *ctx) {
 				  }
 	}
 	return EVAL_OK;
+}
+
+static int evalVarDef(ASTNode *stmt, EvalCtx *ctx) {
+	ShellValue val = evalExpr(stmt->data.var_def.expr, ctx);
+	defShellVarEntry(ctx, stmt->data.var_def.var_name, val);
+	return 0;
 }
 
 static int evalEcho(ASTNode *stmt, EvalCtx *ctx) {

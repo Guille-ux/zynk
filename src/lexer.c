@@ -192,13 +192,13 @@ Token lexer_next_token() {
 
 		if (pattern("return")) return newToken(TOKEN_RETURN, "return", 6);
 		if (pattern("null")) return newToken(TOKEN_NULL, "null", 4);
-
-		if (pattern("do")) return newToken(TOKEN_DO, "do", 2);
 		if (pattern("done")) return newToken(TOKEN_DONE, "done", 4);
+		if (pattern("do")) return newToken(TOKEN_DO, "do", 2);
+		
 
 		if (pattern("or")) return newToken(TOKEN_OR, "or", 2);
 		if (pattern("and")) return newToken(TOKEN_AND, "and", 3);
-
+		if (pattern("let")) return newToken(TOKEN_LET, "let", 3);
 		/*
 		 * Añadir más tokens de este tipo, algo me dice que seran importantes
 		 * Podría poner aqui los comandos internos, no se

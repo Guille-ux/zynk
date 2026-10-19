@@ -16,6 +16,7 @@
 static Token *tokens;
 static size_t token_index;
 
+static ASTNode *parse_var_def();
 static ASTNode *parse_program();
 static ASTNode *parse_statement();
 static ASTNode *parse_assignment();
@@ -124,6 +125,8 @@ static ASTNode *parse_statement() {
 			// HUM, más adelante
 		}
 		return parse_command_call();
+	} else if (current->type==TOKEN_LET) {
+		return parse_var_def();
 	} else if (current->type==TOKEN_NUMBER) {
 		return parse_assignment();
 	} else if (current->type == TOKEN_IF) {
@@ -312,6 +315,28 @@ static ASTNode *parse_primary_expr() {
 			 }
 	}
 	//eat();
+	return new_node;
+}
+
+static ASTNode *parse_var_def() {
+	eat(); // nos comemos el let
+	ASTNode *new_node = newASTNode(VAR_DEF);
+	Token *identifier = eat();
+	ASTNode *expr;
+	if (peek()->type==TOKEN_ASSIGN) {
+		// parseamos la expresión
+		eat();
+		expr = parse_expression();
+		if (expr == NULL) {
+			parser_free_ast(new_node);
+			return NULL;
+		}
+	} else {
+		expr = newASTNode(NODE_NUM_LIT);
+		expr->data.number_lit = 0;
+	}
+	new_node->data.var_def.var_name = identifier->value;
+	new_node->data.var_def.expr = expr;
 	return new_node;
 }
 
