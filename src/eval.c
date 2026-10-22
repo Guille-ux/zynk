@@ -1,4 +1,5 @@
 #include "../include/eval.h"
+#include "../include/modules.h"
 
 // Value
 static ShellValue evalNum(ASTNode *num);
@@ -7,9 +8,12 @@ static ShellValue evalVarRef(ASTNode *ref, EvalCtx *ctx);
 static ShellValue evalArgRef(ASTNode *ref, EvalCtx *ctx);
 static ShellValue evalBinExpr(ASTNode *expr, EvalCtx *ctx);
 static ShellValue evalUnaryExpr(ASTNode *expr, EvalCtx *ctx);
-
+static EvalCtx *evalMembers(ASTNode *stmt, char *name, EvalCtx *ctx, char **oname);
+static ShellValue evalFuncCall(ASTNode *stmt, EvalCtx *ctx);
 
 // Status Code
+static int evalClassDef(ASTNode *stmt, EvalCtx *ctx);
+static int evalFuncDef(ASTNode *stmt, EvalCtx *ctx);
 static int evalStatement(ASTNode *stmt, EvalCtx *ctx);
 static int evalProgram(ASTNode *program, EvalCtx *ctx);
 static int evalCommandCall(ASTNode *call, EvalCtx *ctx);
@@ -19,6 +23,7 @@ static int evalWhile(ASTNode *stmt, EvalCtx *ctx);
 static int evalFor(ASTNode *stmt, EvalCtx *ctx);
 static int evalEcho(ASTNode *stmt, EvalCtx *ctx);
 static int evalVarDef(ASTNode *stmt, EvalCtx *ctx);
+static int evalVarDel(ASTNode *stmt, EvalCtx *ctx);
 
 #define EVAL_OK 0
 #define EVAL_ERR 1
@@ -26,7 +31,18 @@ static int evalVarDef(ASTNode *stmt, EvalCtx *ctx);
 #define EVAL_RET 3
 #define EVAL_EXIT 4
 
-ShellValue newNumVal(long num) {
+EvalCtx *global;
+GCObj *obj_pool;
+int cycles=0;
+#define CYCLES_PER_SWEEP 100 // es decir 100 expresiones entre cada
+			     // pasada
+
+void set_global(EvalCtx *ctx) {
+	ctx->global = NULL;
+	global = ctx;
+}
+
+ShellValue newNumVal(double num) {
 	ShellValue val;
 	val.type = VAL_NUMBER;
 	val.as.num = num;
@@ -34,32 +50,175 @@ ShellValue newNumVal(long num) {
 }
 
 uint32_t zhash(char *name) {
-	// de momento siempre 0
+	// cosa cutre por ahora
+	uint32_t val = 0;
+	for (int i=0;name[i]!='\0';i++) {
+		val += name[i]*4321 % 100;	
+	}
+	return val;
+}
+
+void addObj(GCObj *obj) {
+	GCObj *current = obj_pool;
+	obj_pool = obj;
+	obj_pool->next = current;
+}
+
+void delObj(GCObj *obj) {
+	if (obj->last==NULL) {
+		obj_pool=obj->next;
+	} else {
+		obj->last->next = obj->next;
+	}
+	if (obj->obj.magic==ZYNK_MAGIC_CLASS) {
+		void *ptr = (void*)((size_t)obj+sizeof(GCObj));
+		killShellCtx((EvalCtx*)ptr);
+	}
+	if (obj->obj.magic==ZYNK_MAGIC_ARRAY) {
+		ArrayObj *obj = (ArrayObj*)obj;
+		void *ptr = (void*)obj->items;
+		if (obj->capacity==0) {
+
+		} else {
+			kfree(ptr);
+		}
+	}
+	kfree(obj); // lo limpiamos, perfecto! NICE
+}
+
+void growArray(Array *array) {
+	ShellValue *new_items = kmalloc(array->capacity*2*sizeof(ShellValue));
+	memcpy(new_items, array->items, array->size);
+	array->capacity *= 2;
+	kfree(array->items);
+	array->items = new_items;
+}
+
+void zynk_gc() {
+	GCObj *current = obj_pool;
+	while (current!=NULL) {
+		if (current->obj.refc==0) {
+			GCObj *next = current->next;
+			delObj(current);
+			current = next;
+		} else {
+			current = current->next;
+		}
+	}
+}
+
+ShellValue newFuncVal(EvalCtx *ctx, ASTNode *program) {
+	ShellValue val;
+	val.type = VAL_FUNC;
+	ZFuncObj *func = (ZFuncObj*)kmalloc(sizeof(ZFuncObj));
+	memset(func, 0, sizeof(ZFuncObj));
+	val.as.func = (ZFunc*)((size_t)func + sizeof(GCObj));
+	if (func==NULL) {
+		kprintf("Err -> Out of Memory\n");
+		val.type=VAL_NONE;
+	}
+	func->ctx = ctx;
+	func->program = program;
+	func->data.obj.refc = 0;
+	addObj((GCObj*)func);
+	return val;
+}
+
+
+ShellValue newClassVal(EvalCtx *ctx, ASTNode *program) {
+	ShellValue val;
+	val.type = VAL_DICT;
+	ClassObj *klass = (ClassObj*)kmalloc(sizeof(ClassObj));
+	memset(klass, 0, sizeof(ClassObj));
+	val.as.comodin = (void*)((size_t)klass + sizeof(GCObj));
+	klass->ctx = ctx;
+	klass->program = program;
+	klass->data.obj.refc = 0;
+	klass->data.obj.magic = ZYNK_MAGIC_CLASS;
+	addObj((GCObj*)klass);
+	return val;
+}
+
+
+ShellValue newInstanceVal(EvalCtx *ctx) {
+	ShellValue val;
+	val.type = VAL_DICT;
+	InstanceObj *instance = (InstanceObj*)kmalloc(sizeof(InstanceObj));
+	memset(instance, 0, sizeof(InstanceObj));
+	val.as.comodin = (void*)((size_t)instance + sizeof(GCObj));
+	instance->ctx = ctx;
+	instance->data.obj.refc = 0;
+	instance->data.obj.magic = ZYNK_MAGIC_CLASS;
+	addObj((GCObj*)instance);
+	return val;
+}
+
+
+static int evalClassDef(ASTNode *stmt, EvalCtx *ctx) {
+	ShellValue class_val = newClassVal(ctx, stmt->data.class_def.program);
+	defShellVarEntry(ctx, stmt->data.class_def.name, class_val);
 	return 0;
+}
+
+ShellValue newArrayVal() {
+	ShellValue val;
+	val.type = VAL_ARRAY;
+	int size = 0;
+	int capacity = 10; // no se un número inicial
+	GCObj *arr = (GCObj*)kmalloc(sizeof(ArrayObj));
+	memset(arr, 0, sizeof(ArrayObj));
+	ArrayObj *a = (ArrayObj*)arr;
+	a->size = size;
+	a->capacity = capacity;
+	a->items = (ShellValue*)kmalloc(sizeof(ShellValue)*capacity);
+	val.as.arr = (Array*)((size_t)a+sizeof(GCObj));
+	arr->obj.magic = ZYNK_MAGIC_ARRAY;
+	addObj(arr);
+	return val;
 }
 
 ShellValue newStrVal(const char *str) {
 	ShellValue val;
 	val.type = VAL_STRING;
 	uint32_t len = strlen(str);
-	Obj *string = (Obj*)kmalloc(sizeof(Obj)+len+1);
-	val.as.str = (char*)((size_t)string + sizeof(Obj));
+	GCObj *string = (GCObj*)kmalloc(sizeof(GCObj)+len+1);
+	memset(string, 0, sizeof(GCObj)+len+1);
+	val.as.str = (char*)((size_t)string + sizeof(GCObj));
 	if (string==NULL) {
 		kprintf("Err -> Out of Memory\n");
 		val.type=VAL_NONE;
 	}
 	strcpy(val.as.str, str);
 	val.as.str[len]='\0';
-	string->refc = 1;
+	string->obj.refc = 0;
+	addObj(string);
 	return val;
 }
 
 void freeVal(ShellValue val) {
-	if (val.type == VAL_STRING) {
-		Obj *string = (Obj*)((size_t)val.as.str - sizeof(Obj));
+	if (val.type == VAL_STRING ||
+	    val.type == VAL_DICT ||
+	    val.type == VAL_FUNC) {
+		GCObj *string = (GCObj*)((size_t)val.as.comodin - sizeof(GCObj));
 		kfree(string);
 		val.as.str = NULL;
 	}
+}
+
+void midKillShellCtx(EvalCtx *ctx) {
+	if (ctx==NULL) return;
+
+	for (size_t i=0;i<ctx->var_cap;i++) {
+		if (ctx->var_table[i].is_set) {
+			ref_del(ctx->var_table[i].val);
+		}
+	}
+	for (size_t i=0;i<ctx->arg_used;i++) {
+		ref_del(ctx->argv[i].val);
+	}
+	kfree(ctx->var_table);
+	kfree(ctx->argv);
+	kfree(ctx);
 }
 
 EvalCtx *newShellCtx() {
@@ -69,11 +228,14 @@ EvalCtx *newShellCtx() {
 		return NULL;
 	}
 	memset((void*)ctx, 0, sizeof(EvalCtx));
-	ctx->var_cap =16;
+	ctx->global=global;
+	ctx->var_cap=64;
 	ctx->argc=16;
 	ctx->var_table = (Var*)kmalloc(sizeof(Var)*ctx->var_cap);
 	ctx->argv = (Var*)kmalloc(sizeof(Var)*ctx->argc);
-	ctx->command_handler = NULL;
+	memset(ctx->var_table, 0, ctx->var_cap);
+	memset(ctx->argv, 0, ctx->argc);
+	ctx->command_handler = multimodule_handler;
 	/*
 	 * Continuar
 	 */
@@ -89,6 +251,7 @@ EvalCtx *newShellCtx() {
 	ctx->ret = (ShellValue){.type = VAL_NONE};
 	ctx->should_exit=false;
 	ctx->arg_used = 0;
+	ctx->parent = NULL;
 
 	int exit_code = EVAL_OK;
 	return ctx;
@@ -110,7 +273,7 @@ void killShellCtx(EvalCtx *ctx) {
 	kfree(ctx);
 }
 
-Var *getShellVarEntry(EvalCtx *ctx, char *name) {
+void delShellVarEntry(EvalCtx *ctx, char *name) {	
 	size_t id=0;
 	size_t s_val = zhash(name) % ctx->var_cap;
 	bool done = false;
@@ -130,11 +293,75 @@ Var *getShellVarEntry(EvalCtx *ctx, char *name) {
 	}
 	if (ctx->var_cap <= id) {
 		kprintf("Err -> Id exceeds the table capacity\n");
+		return;
+	}
+	ref_del(ctx->var_table[id].val);
+	ctx->var_table[id].name = NULL; // solo puedo hacerlo aqui, AHAM
+}
+
+Var *getShellVarEntry(EvalCtx *ctx, char *name) {
+
+	if (name==NULL) return NULL;
+	size_t id=0;
+	size_t s_val = zhash(name) % ctx->var_cap;
+	bool done = false;
+	if (ctx->var_table[s_val].name != NULL) {
+		if (strcmp(ctx->var_table[s_val].name, name)==0) {
+			
+			id = s_val;
+			done = true;
+		}
+	}
+	for (size_t i=0;i<ctx->var_cap;i++) {		
+		if (done) break;
+		if (ctx->var_table[i].name==NULL) continue;
+		//kprintf("AHAM-> %s\n", ctx->var_table[i].name);
+		if (strcmp(name, ctx->var_table[i].name)==0) {
+			id=i;
+			done=true;
+			break;
+		}
+	}
+	if (!done) {
+		if (ctx->parent!=NULL) {
+			return getShellVarEntry(ctx->parent, name);
+		} else if (ctx->global!=NULL) return getShellVarEntry(ctx->global, name);
+		kprintf("Err -> Var not defined yet\n");
+		return NULL;
+	}
+	return &ctx->var_table[id];
+}
+
+Var *getShellVarEntrySilent(EvalCtx *ctx, char *name) {
+	if (name==NULL) return NULL;
+	size_t id=0;
+	size_t s_val = zhash(name) % ctx->var_cap;
+	bool done = false;
+	if (ctx->var_table[s_val].name != NULL) {
+		if (strcmp(ctx->var_table[s_val].name, name)==0) {
+			id = s_val;
+			done = true;
+		}
+	}
+	for (size_t i=0;i<ctx->var_cap;i++) {	
+		if (done) break;
+		if (ctx->var_table[i].name==NULL) continue;
+		if (strcmp(name, ctx->var_table[i].name)==0) {
+			id=i;
+			done=true;
+			break;
+		}
+	}
+	if (!done) {
+		if (ctx->parent!=NULL) {
+			return getShellVarEntrySilent(ctx->parent, name);
+		} else if (ctx->global!=NULL) return getShellVarEntrySilent(ctx->global, name);
 		return NULL;
 	}
 	return &ctx->var_table[id];
 }
 void defShellVarEntry(EvalCtx *ctx, char *name, ShellValue val) {
+	if (name==NULL) return;
 	size_t id=ctx->var_cap+1;
 	size_t fid=ctx->var_cap+1;
 	size_t s_val = zhash(name) % ctx->var_cap;
@@ -162,7 +389,7 @@ void defShellVarEntry(EvalCtx *ctx, char *name, ShellValue val) {
 			kprintf("Err -> Out of Memory\n");
 			return;
 		}
-		memcpy((void*)new_table, (const void*)ctx->var_table, ctx->var_cap);
+		memcpy((void*)new_table, (const void*)ctx->var_table, ctx->var_cap*sizeof(Var));
 		kfree(ctx->var_table);
 		ctx->var_cap=new_cap;
 		ctx->var_table = new_table;
@@ -172,7 +399,9 @@ void defShellVarEntry(EvalCtx *ctx, char *name, ShellValue val) {
 	ctx->var_table[id].name = name;
 }
 
+
 void setShellVarEntry(EvalCtx *ctx, char *name, ShellValue val) {
+	if (name==NULL) return;
 	size_t id=ctx->var_cap+1;
 	size_t fid=ctx->var_cap+1;
 	size_t s_val = zhash(name) % ctx->var_cap;
@@ -198,29 +427,37 @@ void setShellVarEntry(EvalCtx *ctx, char *name, ShellValue val) {
 		id=fid; // x si encontramos espacio libre
 	}
 	if (id >= ctx->var_cap) {
+		if (ctx->parent!=NULL) {
+			setShellVarEntry(ctx->parent, name, val);
+		}
 		kprintf("Err -> Var isn't defined yet!\n");
 	}
-	ref_del(ctx->var_table[id].val);	
+	ref_del(ctx->var_table[id].val);
 	ctx->var_table[id] = (Var){.val=ref_add(val), .is_exported=false, .is_set=true};
 	ctx->var_table[id].name = name;
 }
 
 ShellValue ref_add(ShellValue val) {
-	if (val.type==VAL_STRING) {
-		Obj *data = (Obj*)((size_t)val.as.str - sizeof(Obj));
+	if (val.type==VAL_STRING ||
+	    val.type==VAL_FUNC ||
+	    val.type==VAL_DICT ||
+	    val.type==VAL_ARRAY) {
+		Obj *data = (Obj*)((size_t)val.as.comodin - sizeof(Obj));
 		data->refc++;
-	}
+	}	
 	return val;
 }
 
 void ref_del(ShellValue val) {
-	if (val.type==VAL_STRING) {
-		Obj *data = (Obj*)((size_t)val.as.str - sizeof(Obj));
-		data->refc--;
-		if (data->refc == 0) {
-			kfree(data);
+	if (val.type==VAL_STRING ||
+	    val.type==VAL_FUNC ||
+	    val.type==VAL_DICT ||
+	    val.type==VAL_ARRAY) {
+		Obj *data = (Obj*)((size_t)val.as.comodin - sizeof(Obj));	
+		if (data->refc != 0) {
+			data->refc--;
 		}
-	}
+	}	
 }
 
 void addShellArg(EvalCtx *ctx, ShellValue val) {
@@ -228,6 +465,7 @@ void addShellArg(EvalCtx *ctx, ShellValue val) {
 		kprintf("Err -> Too Many Args\n");
 return;
 	}
+	ref_add(val);
 	ctx->argv[ctx->arg_used++] = (Var){.val=val, .is_exported=false, .is_set=true};
 }
 
@@ -236,13 +474,15 @@ ShellValue getShellArg(EvalCtx *ctx, size_t id) {
 		kprintf("Err -> Arg n. %d doesn't exist	\n", (int)id);
 		return newNumVal(0);
 	}
-	return ref_add(ctx->argv[id].val);
+	return ctx->argv[id].val;
 }
 
 
 
 int eval(ASTNode *ast, EvalCtx *ctx) {
 	if (ctx==NULL || ast==NULL) return EVAL_ERR; // fatal error!
+	
+	defShellVarEntry(ctx, "ret", newNumVal(0));
 	
 	int exit_code = evalProgram(ast, ctx);
 	if (ctx->should_exit) {
@@ -255,6 +495,10 @@ static int evalProgram(ASTNode *program, EvalCtx *ctx) {
 	if (program->type!=NODE_PROGRAM) return EVAL_ERR;
 	int cexit_code = EVAL_OK;
 	for (size_t i=0;i<program->data.program.size;i++) {
+		cycles = (cycles+1)%CYCLES_PER_SWEEP;
+		if (cycles==0) {
+			zynk_gc();
+		}
 		cexit_code = evalStatement(program->data.program.stmts[i], ctx);
 		if (ctx->should_ret || ctx->should_exit) {
 			break;
@@ -264,6 +508,8 @@ static int evalProgram(ASTNode *program, EvalCtx *ctx) {
 	return cexit_code;
 }
 
+
+
 static int evalStatement(ASTNode *stmt, EvalCtx *ctx) {
 	if (stmt==NULL) return EVAL_ERR;
 	if (ctx->should_ret) return EVAL_RET;
@@ -271,6 +517,15 @@ static int evalStatement(ASTNode *stmt, EvalCtx *ctx) {
 
 
 	switch (stmt->type) {
+		case CLASS_DEF:
+			return evalClassDef(stmt, ctx);
+		case FUNCTION_CALL:
+			{
+				evalFuncCall(stmt, ctx);
+				return 0;
+			}
+		case FUNCTION_DEF: return evalFuncDef(stmt, ctx);
+		case VAR_DEL: return evalVarDel(stmt, ctx);
 		case VAR_DEF: return evalVarDef(stmt, ctx);
 		case NODE_ASSIGNMENT: return evalAssignment(stmt, ctx);
 		case NODE_COMMAND_CALL: return evalCommandCall(stmt, ctx);
@@ -296,29 +551,134 @@ static int evalStatement(ASTNode *stmt, EvalCtx *ctx) {
 	return EVAL_OK;
 }
 
+static int evalFuncDef(ASTNode *stmt, EvalCtx *ctx) {
+	ShellValue func = newFuncVal(ctx, stmt->data.fn_def.program);
+	defShellVarEntry(ctx, stmt->data.fn_def.name, func);
+	return 0;
+}
+
+static ShellValue evalFuncCall(ASTNode *stmt, EvalCtx *ctx) {
+	char *name;
+	EvalCtx *rctx = evalMembers(stmt->data.fn_call.member, stmt->data.fn_call.name, ctx, &name);
+	Var *var = getShellVarEntry(rctx, name);
+	if (var == NULL) return (ShellValue){.type = VAL_NONE};
+
+	if (var->val.type == VAL_FUNC) {
+		ZFunc *func = var->val.as.func;
+		EvalCtx *fctx = newShellCtx();
+		for (int i=0; i<stmt->data.fn_call.argc; i++) {
+			addShellArg(fctx, evalExpr(stmt->data.fn_call.args[i], ctx));
+		}
+		fctx->parent = func->ctx;
+		eval(func->program, fctx);
+		ShellValue ret = fctx->ret;
+		midKillShellCtx(fctx);
+		return ret;
+	} else if (var->val.type == VAL_CFUNC) {
+		CFunc *func = var->val.as.c_func;
+		ShellValue args[stmt->data.fn_call.argc];
+		for (int i=0; i<stmt->data.fn_call.argc; i++) {
+			args[i]=evalExpr(stmt->data.fn_call.args[i], ctx);
+		}
+
+		ShellValue ret = func->func(stmt->data.fn_call.argc, args);
+		return ret;
+	} else if (var->val.type == VAL_DICT) {
+		
+		ClassObj *klass = (ClassObj*)((size_t)var->val.as.comodin - sizeof(GCObj));
+		
+		EvalCtx *instance_ctx = newShellCtx();
+		instance_ctx->parent = klass->ctx;
+
+		
+		eval(klass->program, instance_ctx);
+
+		
+		return newInstanceVal(instance_ctx);
+	}
+
+	kprintf("Err -> Call target is not a function or class\n");
+	return (ShellValue){.type = VAL_NONE};
+}
+
+static EvalCtx *evalMembers(ASTNode *stmt, char *name, EvalCtx *ctx, char **oname) {
+	
+	if (stmt == NULL) {
+		*oname = name;
+		return ctx;
+	}
+	Var *base_var = getShellVarEntrySilent(ctx, name);
+	EvalCtx *rctx = ctx;
+
+	if (base_var != NULL && base_var->val.type == VAL_DICT) {
+		
+		InstanceObj *inst = (InstanceObj*)((size_t)base_var->val.as.comodin - sizeof(GCObj));
+		rctx = inst->ctx;
+	}
+
+	
+
+	
+	ASTNode *current = stmt;
+	char *rname = name;
+
+	while (current != NULL) {
+		
+		ShellValue val = evalExpr(current->data.member.expr, ctx);
+		if (val.type == VAL_STRING) {
+			rname = val.as.str;
+		}
+
+		
+		if (current->data.member.member != NULL) {
+			Var *m_var = getShellVarEntrySilent(rctx, rname);
+			if (m_var != NULL && m_var->val.type == VAL_DICT) {
+				InstanceObj *inst = (InstanceObj*)((size_t)m_var->val.as.comodin - sizeof(GCObj));
+				rctx = inst->ctx;
+			}
+			current = current->data.member.member;
+		} else {
+			break;
+		}
+	}
+
+	*oname = rname;
+	return rctx;
+}
+
+static int evalVarDel(ASTNode *stmt, EvalCtx *ctx) {
+	char *name;
+	EvalCtx *rctx = evalMembers(stmt->data.var_del.member, stmt->data.var_del.name, ctx, &name);
+	delShellVarEntry(rctx, name);
+	return 0;
+}
+
 static int evalVarDef(ASTNode *stmt, EvalCtx *ctx) {
 	ShellValue val = evalExpr(stmt->data.var_def.expr, ctx);
-	defShellVarEntry(ctx, stmt->data.var_def.var_name, val);
+	char *name;
+	EvalCtx *rctx = evalMembers(stmt->data.var_def.member, stmt->data.var_def.var_name, ctx, &name);	
+	defShellVarEntry(rctx, name, val);
 	return 0;
 }
 
 static int evalEcho(ASTNode *stmt, EvalCtx *ctx) {
 	ShellValue val = evalExpr(stmt->data.echo_stmt.expr, ctx);
 	if (val.type == VAL_NUMBER) {
-		kprintf("%d\n", (int)val.as.num);
+		kprintf("%f\n", val.as.num);
 	} else if (val.type == VAL_STRING) {
 		kprintf("%s\n", (const char *)val.as.str);
 	} else {
 		kprintf("Err -> Unknown type\n");
 	}
-	ref_del(val);
 	return EVAL_OK;
 }
 
 static int evalAssignment(ASTNode *stmt, EvalCtx *ctx) {
+	char *name;
+	EvalCtx *rctx = evalMembers(stmt->data.assignment.member, stmt->data.assignment.var_name, ctx, &name);
 	ShellValue val = evalExpr(stmt->data.assignment.expr, ctx);
-	setShellVarEntry(ctx, stmt->data.assignment.var_name, val);
-	ref_del(val);
+	setShellVarEntry(rctx, name, val);
+	ref_add(val);
 	return EVAL_OK;
 }
 
@@ -409,6 +769,7 @@ ShellValue evalExpr(ASTNode *expr, EvalCtx *ctx) {
 		return (ShellValue){.type=VAL_NONE};
 	}
 	switch (expr->type) {
+		case FUNCTION_CALL: return evalFuncCall(expr, ctx);
 		case NODE_NUM_LIT: return evalNum(expr);
 		case NODE_STRING_LIT: return evalStr(expr);
 		case NODE_VAR_REF: return evalVarRef(expr, ctx);
@@ -428,13 +789,15 @@ static ShellValue evalStr(ASTNode *str) {
 }
 
 static ShellValue evalVarRef(ASTNode *ref, EvalCtx *ctx) {
-	Var *var_entry = getShellVarEntry(ctx, ref->data.var_ref.name);
+	char *name;
+	EvalCtx *rctx = evalMembers(ref->data.var_ref.member, ref->data.var_ref.name, ctx, &name);
+	Var *var_entry = getShellVarEntry(rctx, name);	
 	if (var_entry==NULL) {
 		return (ShellValue){.type=VAL_NONE};
 	}
-	return ref_add(var_entry->val);
+	return var_entry->val;
 }
-
+// TODO: hacer q los argumentos acepten miembros
 static ShellValue evalArgRef(ASTNode *ref, EvalCtx *ctx) {
 	return ref_add(getShellArg(ctx, ref->data.arg_ref.num));
 }

@@ -3,15 +3,19 @@
 BUILD = build
 CC = gcc
 LIBS = 
-CFLAGS = -Wall -Wextra -c 
+EXTRA ?= 
+CFLAGS = -Wall -Wextra -c $(EXTRA)
 AR = ar
 ARFLAGS = rcs
 SRC = src
 MAIN_OBJ = $(BUILD)/zynk.o
 TARGET = $(BUILD)/zynk
-OBJS = $(BUILD)/mbtype.o $(BUILD)/parser.o $(BUILD)/lexer.o $(BUILD)/eval.o 
+OBJS = $(BUILD)/mbtype.o $(BUILD)/parser.o $(BUILD)/lexer.o $(BUILD)/eval.o $(BUILD)/globals.o
 $(TARGET): $(OBJS) $(MAIN_OBJ)
 	$(CC) $(LIBS) -o $(TARGET) $(OBJS) $(MAIN_OBJ)
+
+$(BUILD)/globals.o: $(SRC)/globals.c
+	$(CC) $(CFLAGS) -o $(BUILD)/globals.o $(SRC)/globals.c
 
 $(BUILD)/libzynk.a: $(OBJS)
 	$(AR) $(ARFLAGS) $(BUILD)/libzynk.a $(OBJS)

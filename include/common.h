@@ -14,7 +14,7 @@
 
 #define kmalloc(size) (malloc((size)))
 #define kfree(ptr) (free((ptr)))
-#define ltoa(num, buff) (sprintf(buff, "%ld", num))
+#define ltoa(num, buff) (sprintf(buff, "%f", num))
 
 static int kprintf(const char *format, ...) {
   va_list args;

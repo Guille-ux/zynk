@@ -4,6 +4,7 @@
 #include "../include/parser.h"
 #include "../include/lexer.h"
 #include "../include/modules.h"
+#include "../include/globals.h"
 
 
 int main(size_t argc, char *argv[]) {
@@ -11,6 +12,11 @@ int main(size_t argc, char *argv[]) {
 		printf("Uso: %s <nombre_del_archivo>\n", argv[0]);
 		return 1;
 	}
+	EvalCtx *global = newShellCtx();
+	
+	set_global(global);
+	
+	register_globals(global);
 
 	FILE *archivo = fopen(argv[1], "r");
 

@@ -26,6 +26,8 @@ typedef enum {
 	FUNCTION_DEF,
 	FUNCTION_CALL,
 	VAR_DEF,
+	VAR_DEL,
+	MEMBER_ACCESS,
 } ASTNodeType;
 
 struct ASTNode;
@@ -46,6 +48,8 @@ struct FnNode;
 struct CallNode;
 struct ClassNode;
 struct VarDefNode;
+struct VarDelNode;
+struct MemberNode;
 
 typedef struct ProgramNode {
 	struct ASTNode **stmts;
@@ -54,15 +58,18 @@ typedef struct ProgramNode {
 
 typedef struct ArgRefNode {
 	long num;
+	struct ASTNode *member;
 } ArgRefNode;
 
 typedef struct AssignmentNode {
 	char *var_name;
+	struct ASTNode *member;
 	struct ASTNode *expr;
 } AssignmentNode;
 
 typedef struct VarDefNode {
 	char *var_name;
+	struct ASTNode *member;
 	struct ASTNode *expr;
 } VarDefNode;
 
@@ -74,7 +81,13 @@ typedef struct CommandCallNode {
 
 typedef struct VarRefNode {
 	char *name;
+	struct ASTNode *member;
 } VarRefNode;
+
+typedef struct VarDelNode {
+	char *name;
+	struct ASTNode *member;
+} VarDelNode;
 
 typedef struct BinExprNode {
 	TokenType op;
@@ -123,15 +136,31 @@ typedef struct ExportNode {
 			     // Aunque no todavia
 } ExportNode;
 
-/*
-typedef struct FnNode {
+typedef struct MemberNode {
+	struct ASTNode *expr;
+	struct ASTNode *member;
+} MemberNode;
 
+
+typedef struct FnNode {
+	char *name;
+	struct ASTNode *program;
 } FnNode;
 
 typedef struct CallNode {
-
+	char *name;
+	struct ASTNode *member;
+	struct ASTNode **args;
+	size_t argc;
 } CallNode;
-*/
+
+typedef struct ClassDef {
+	char *name;
+	struct ASTNode *program;
+} ClassDef;
+
+
+
 typedef struct ASTNode {
 	ASTNodeType type;
 	union {
@@ -149,13 +178,14 @@ typedef struct ASTNode {
 		ExportNode export_stmt;
 		ArgRefNode arg_ref;
 		VarDefNode var_def;
-		/*
+		VarDelNode var_del;
+		MemberNode member;
 		FnNode fn_def;
 		CallNode fn_call;
-		*/
+		ClassDef class_def;
 
 		char *string_lit;
-		long number_lit;
+		double number_lit;
 	} data;
 } ASTNode;
 

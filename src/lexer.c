@@ -20,6 +20,10 @@ static char advance() {
 	return source[current_pos++];
 }
 
+static char next() {
+	return source[current_pos+1];
+}
+
 static char peek() {
 	return source[current_pos];
 }
@@ -27,7 +31,9 @@ static char peek() {
 static Token newToken(TokenType type, const char *start, size_t len) {
 	Token token;
 	token.type = type;
-
+	if (len==0) {
+		return token;
+	} 
 	
 
 	token.value=m_strndup(start, len);
@@ -69,24 +75,29 @@ static bool match(char c) {
 
 static bool pattern(const char *str) {
 	size_t last = current_pos;
-	const char *s=str;
-	bool tmp=false;
-	while (match(*s++)) {
-		if (*s=='\0') tmp=true;
+	const char *s = str;
+	bool tmp = false;
+	
+	while (*s != '\0') {
+		if (peek() == *s) {
+			advance();
+			s++;
+		} else {
+			break;
+		}
 	}
-	if (!tmp) {
+	
+	if (*s != '\0') {
+		// oh, q mal, no es
 		current_pos = last;
 		return false;
 	}
-	//advance();
-	/*
-	 * Creo que esto es suficiente para comprobarlo todo, ¿no?
-	 *
-	 */
-	
-	if (peek()<='Z' && peek()>='A') return false;
-	if (peek()<='z' && peek()>='a') return false;
-	if (peek()=='_') return false;
+	// JAJAJAJAJ, CREO Q ESTO LO ARREGLA
+	// si es una letra o num entonces es un identificador más largo creo
+	if (k_isalnum(peek()) || peek() == '_') {
+		current_pos = last;
+		return false;
+	}
 
 	return true;
 }
@@ -94,7 +105,7 @@ static bool pattern(const char *str) {
 Token lexer_next_token() {
 	char c;
 	while (peek() != '\0') {
-		c = peek();
+		c = peek();	
 		if (pattern("<=")) return newToken(TOKEN_LEQ, "<=", 2);
 		if (pattern(">=")) return newToken(TOKEN_GEQ, ">=", 2);
 		if (pattern("!=")) return newToken(TOKEN_BEQ, "!=", 2);
@@ -169,9 +180,13 @@ Token lexer_next_token() {
 			return newToken(TOKEN_ASSIGN, "=", 1);
 		}
 		
-		if (k_isdigit(c)) { // NOTA: añadir soporte para decimales, en el futuro
+		if (k_isdigit(c)) { // NOTA: añadir soporte para decimales, en el futuro	
+			bool comma = false;
 			size_t start_pos=current_pos;
-			while (k_isdigit(peek())) advance();
+			while (k_isdigit(peek())||((peek()=='.')&&(!comma))) {
+				if (peek()=='.') comma=true;
+				advance();
+			}
 			return newToken(TOKEN_NUMBER, source + start_pos, current_pos - start_pos);
 		}
 
@@ -179,6 +194,7 @@ Token lexer_next_token() {
 		 * Patterns, son tokens internos, por ejemplo para break
 		 * xD
 		 */
+		
 		if (pattern("del")) return newToken(TOKEN_DEL, "del", 3);
 		if (pattern("for")) return newToken(TOKEN_FOR, "for", 3);
 		if (pattern("break")) return newToken(TOKEN_BREAK, "break", 5);
@@ -200,6 +216,8 @@ Token lexer_next_token() {
 		if (pattern("or")) return newToken(TOKEN_OR, "or", 2);
 		if (pattern("and")) return newToken(TOKEN_AND, "and", 3);
 		if (pattern("let")) return newToken(TOKEN_LET, "let", 3);
+		if (pattern("fn")) return newToken(TOKEN_FN, "fn", 2);
+		if (pattern("class")) return newToken(TOKEN_CLASS, "class", 4);		
 		/*
 		 * Añadir más tokens de este tipo, algo me dice que seran importantes
 		 * Podría poner aqui los comandos internos, no se

@@ -1,11 +1,11 @@
 /*
  * parser.c
  * sljaknsnak
- * es mi parser para mbash
+ * es mi parser para zynk
  * 
  *
  *
- * No Se - Guillermo Leira Temes 2025
+ * No Se - Guillermo Leira Temes 2026 basado en el de mbash
  *
  */
 
@@ -16,6 +16,10 @@
 static Token *tokens;
 static size_t token_index;
 
+static ASTNode *parse_fn_call();
+static ASTNode *parse_fn_def();
+static ASTNode *parse_member();
+static ASTNode *parse_var_del();
 static ASTNode *parse_var_def();
 static ASTNode *parse_program();
 static ASTNode *parse_statement();
@@ -30,7 +34,9 @@ static ASTNode *parse_return();
 static ASTNode *parse_expression();
 static ASTNode *parse_unary_expr();
 static ASTNode *parse_primary_expr();
+static ASTNode *parse_class_def();
 static ASTNode **parse_statement_list(size_t *out_s, TokenType *stop_tokens, size_t n_stop_tokens);
+static ASTNode **parse_expression_list(size_t *argc);
 
 static Token *peek() {
 	return &tokens[token_index];
@@ -80,7 +86,8 @@ static ASTNode *parse_program() {
 		return NULL;
 	}
 
-	while (peek()->type != TOKEN_EOF) {
+	while (peek()->type != TOKEN_EOF &&
+		   peek()->type != TOKEN_RBRACE) {
 		if (peek()->type == TOKEN_NEW_LINE) {
 			eat();
 			continue;
@@ -116,14 +123,94 @@ static ASTNode *parse_program() {
 	return programNode;
 }
 
+static ASTNode *parse_member() {
+	ASTNode *new_node = newASTNode(MEMBER_ACCESS);
+	ASTNode *expr;
+	if (peek()->type==TOKEN_LBRACKET) {
+		eat();
+		expr = parse_expression();
+		if (eat()->type!=TOKEN_RBRACKET) {
+			kprintf("Err -> Expected Bracket\n");
+		}
+	} else if (peek()->type==TOKEN_COLON) {
+		eat();
+		Token *current = eat();
+		expr = newASTNode(NODE_STRING_LIT);
+		expr->data.string_lit = strdup(current->value);
+	} else {
+		return NULL; // en plan no hay nada dentro
+	}
+	new_node->data.member.expr = expr;
+	new_node->data.member.member = parse_member();
+	return new_node;
+}
+
+static ASTNode *parse_identifier() {
+    Token *current = eat(); // Nos comemos el TOKEN_IDENTIFIER
+    if (current->type != TOKEN_IDENTIFIER) {
+        kprintf("Err -> Expected Identifier in parse_identifier\n");
+        return NULL;
+    }
+
+    char *name = strdup(current->value);
+    ASTNode *member = parse_member(); 
+
+    
+    if (peek()->type == TOKEN_ASSIGN) {
+        eat(); 
+        ASTNode *expr = parse_expression();
+        if (expr == NULL) {
+            kfree(name);
+            parser_free_ast(member);
+            return NULL;
+        }
+        ASTNode *node = newASTNode(NODE_ASSIGNMENT);
+        node->data.assignment.var_name = name;
+        node->data.assignment.member = member;
+        node->data.assignment.expr = expr;
+        return node;
+    }
+
+    
+    if (peek()->type == TOKEN_LPAREN) {
+        ASTNode *node = parse_fn_call();
+        if (node == NULL) {
+            kfree(name);
+            parser_free_ast(member);
+            return NULL;
+        }
+        node->data.fn_call.name = name;
+        node->data.fn_call.member = member;
+        return node;
+    }
+
+    
+    ASTNode *node = newASTNode(NODE_COMMAND_CALL);
+    node->data.command_call.name = name;
+    
+    size_t argc = 0;
+    ASTNode **argv = parse_expression_list(&argc);
+    node->data.command_call.argc = argc;
+    node->data.command_call.args = argv;
+
+    
+    if (member != NULL) {
+        parser_free_ast(member);
+    }
+
+    return node;
+}
+
 static ASTNode *parse_statement() {	
 	Token *current = peek();
-	if (current->type==TOKEN_IDENTIFIER) {
-		if (seeNext()->type==TOKEN_ASSIGN) {
-			return parse_assignment();
-		} else if (seeNext()->type==TOKEN_LPAREN) {
-			// HUM, más adelante
-		}
+	if (current->type==TOKEN_FN) {
+		return parse_fn_def();
+	} else if (current->type==TOKEN_CLASS) {
+		return parse_class_def();
+	} else if (current->type==TOKEN_DEL) {
+		return parse_var_del();
+	} else if (current->type==TOKEN_IDENTIFIER) {
+		return parse_identifier();
 		return parse_command_call();
 	} else if (current->type==TOKEN_LET) {
 		return parse_var_def();
@@ -181,6 +268,7 @@ void parser_free_ast(ASTNode *node) {
 		case NODE_ASSIGNMENT: {
 					kfree(node->data.assignment.var_name);
 					parser_free_ast(node->data.assignment.expr);
+					parser_free_ast(node->data.assignment.member);
 					break;
 				      }
 		case NODE_COMMAND_CALL: {
@@ -192,7 +280,7 @@ void parser_free_ast(ASTNode *node) {
 					break;
 					}
 		case NODE_VAR_REF: {
-					kfree(node->data.var_ref.name);
+					parser_free_ast(node->data.var_ref.member);
 					break;
 				   }
 		case NODE_STRING_LIT: {
@@ -251,6 +339,36 @@ void parser_free_ast(ASTNode *node) {
 					parser_free_ast(node->data.ret_stmt.expr);
 					break;
 				  }
+		case CLASS_DEF:
+			parser_free_ast(node->data.class_def.program);
+			break;
+		case FUNCTION_DEF:
+			parser_free_ast(node->data.fn_def.program);
+			break;
+		case FUNCTION_CALL:
+			parser_free_ast(node->data.fn_call.member);
+			for (int i=0;i<node->data.fn_call.argc;i++) {
+				parser_free_ast(node->data.fn_call.args[i]);
+			}
+			kfree(node->data.fn_call.args);
+			break;
+		case VAR_DEF: {
+
+			parser_free_ast(node->data.var_def.member);
+			parser_free_ast(node->data.var_def.expr);
+			break;
+			      }
+		case VAR_DEL:
+
+			parser_free_ast(node->data.var_del.member);
+			break;
+		case NODE_ARG_REF:
+			parser_free_ast(node->data.arg_ref.member);
+			break;
+		case MEMBER_ACCESS:
+			parser_free_ast(node->data.member.expr);
+			parser_free_ast(node->data.member.member);
+			break;
 		default: break;
 	}
 	kfree(node);
@@ -267,7 +385,7 @@ static ASTNode *parse_primary_expr() {
 		case TOKEN_NUMBER: {
 			eat();
 			new_node = newASTNode(NODE_NUM_LIT);
-			new_node->data.number_lit = atol(current->value); // un pelin peligroso
+			new_node->data.number_lit = atof(current->value); // un pelin peligroso
 			break;
 				   }
 		case TOKEN_STRING: {
@@ -278,13 +396,16 @@ static ASTNode *parse_primary_expr() {
 				   }
 		case TOKEN_IDENTIFIER: {
 			eat();
+			ASTNode *member = parse_member();
+			char *name = current->value;
 			if (peek()->type==TOKEN_LPAREN) {
-				// llamada a función
-			} else if (peek()->type==TOKEN_LBRACKET) {
-				// cosa de array
+				new_node = parse_fn_call();
+				new_node->data.fn_call.member = member;
+				new_node->data.fn_call.name = name;
 			} else {
-				new_node = newASTNode(NODE_VAR_REF);	
-				new_node->data.var_ref.name = strdup(current->value);
+				new_node = newASTNode(NODE_VAR_REF);
+				new_node->data.var_ref.member = member;
+				new_node->data.var_ref.name = name;
 			}
 			break;
 					}
@@ -292,10 +413,11 @@ static ASTNode *parse_primary_expr() {
 			eat();
 			current = peek();
 			if (!match(TOKEN_NUMBER)) return NULL;
+			ASTNode *member = parse_member();
 			size_t number = atol(current->value);
-			current = peek();
 			new_node=newASTNode(NODE_ARG_REF);
 			new_node->data.arg_ref.num=number;
+			new_node->data.arg_ref.member=member;
 			eat();
 			break;
 				   }
@@ -318,10 +440,56 @@ static ASTNode *parse_primary_expr() {
 	return new_node;
 }
 
+static ASTNode *parse_class_def() {
+	eat();
+	ASTNode *new_node = newASTNode(CLASS_DEF);
+	Token *name = eat();
+	if (name->type!=TOKEN_IDENTIFIER) kprintf("Err -> expected Identifier\n");
+	//kprintf("%s\n", name->value);
+	if (eat()->type!=TOKEN_LBRACE) kprintf("Err -> '{' expected\n");
+	new_node->data.class_def.name = name->value;
+	new_node->data.class_def.program = parse_program();
+	if (eat()->type!=TOKEN_RBRACE) kprintf("Err -> '}' expected\n");
+	return new_node;
+}
+
+static ASTNode *parse_fn_def() {
+	eat();
+	ASTNode *new_node = newASTNode(FUNCTION_DEF);
+	Token *name = eat();
+	if (name->type!=TOKEN_IDENTIFIER) kprintf("Err -> expected Identifier\n");
+	//kprintf("%s\n", name->value);
+	if (eat()->type!=TOKEN_LBRACE) kprintf("Err -> '{' expected\n");
+	new_node->data.fn_def.name = name->value;
+	new_node->data.fn_def.program = parse_program();
+	if (eat()->type!=TOKEN_RBRACE) kprintf("Err -> '}' expected\n");
+	return new_node;
+}
+
+static ASTNode *parse_fn_call() {
+	ASTNode *func_node = newASTNode(FUNCTION_CALL);
+	eat();  //  nos comemos el token ()
+	size_t argc =0;
+	func_node->data.fn_call.args = parse_expression_list(&argc);
+	func_node->data.fn_call.argc = argc;
+	eat(); // comer el '('
+	return func_node;
+}
+
+static ASTNode *parse_var_del() {
+	eat(); // nos comemos del
+	ASTNode *new_node = newASTNode(VAR_DEL);
+	Token *identifier = eat();
+	new_node->data.var_del.name = identifier->value;
+	new_node->data.var_del.member = parse_member();
+	return new_node;
+}
+
 static ASTNode *parse_var_def() {
 	eat(); // nos comemos el let
 	ASTNode *new_node = newASTNode(VAR_DEF);
 	Token *identifier = eat();
+	new_node->data.var_def.member = parse_member();
 	ASTNode *expr;
 	if (peek()->type==TOKEN_ASSIGN) {
 		// parseamos la expresión
@@ -488,6 +656,7 @@ static ASTNode *parse_assignment() {
 		parser_free_ast(new_node);
 		return NULL;
 	}
+	new_node->data.assignment.member = parse_member();
 	new_node->data.assignment.var_name = strdup(name->value);
 	if (!match(TOKEN_ASSIGN)) {
 		kprintf("Err -> Expected '=' after identifier\n");
@@ -505,7 +674,7 @@ static ASTNode *parse_assignment() {
 	return new_node;
 }
 
-static ASTNode **parse_expression_list(size_t *argc);
+
 
 static ASTNode *parse_command_call() {
 	ASTNode *new_node = newASTNode(NODE_COMMAND_CALL);
@@ -560,7 +729,8 @@ static ASTNode **parse_expression_list(size_t *argc) {
 		peek()->type != TOKEN_BREAK &&
 		peek()->type != TOKEN_RETURN &&
 		peek()->type != TOKEN_EXPORT &&
-		peek()->type != TOKEN_ECHO) {
+		peek()->type != TOKEN_ECHO &&
+		peek()->type != TOKEN_RPAREN) {
 		
 
 		ASTNode *arg = parse_expression();
@@ -573,6 +743,7 @@ static ASTNode **parse_expression_list(size_t *argc) {
 			*argc = 0;
 			return NULL;
 		}
+		
 		if (size >= cap) {
 			cap *= 2;
 			ASTNode **new_list = (ASTNode **)kmalloc(sizeof(ASTNode*)*cap);
@@ -592,7 +763,8 @@ static ASTNode **parse_expression_list(size_t *argc) {
 			list = new_list;
 		}
 
-	list[size++]=arg;	
+		list[size++]=arg;
+		//if (peek()->type!=TOKEN_COMMA) break;
 	}
 	*argc = size;
 	return list;
@@ -781,7 +953,6 @@ static ASTNode *parse_while() {
 	ASTNode *new_node = newASTNode(NODE_WHILE_LOOP);
 	if (new_node==NULL) {
 		kprintf("Err -> Out of Memory\n");
-		kfree(new_node);
 		return NULL;
 	}
 	Token *do_k = eat();
@@ -826,9 +997,8 @@ static ASTNode *parse_while() {
 
 static ASTNode *parse_for() {
 	ASTNode *new_node=newASTNode(NODE_FOR_LOOP);
-	if (!new_node) {
+	if (new_node==NULL) {
 		kprintf("Err -> Out of Memory\n");
-		kfree(new_node);
 		return NULL;
 	}
 

@@ -1,12 +1,15 @@
-let hola
-if 10 > 5 then
-	hola = "A ESTUDIAR TECNO DE UNA VEZ!"
-else
-	hola = "wtf?"
-fi
+class Coche {
+	let marca = "Volkswagen"
+	let modelo = "Golf Plus"
+	fn info {
+		let self = $0
+		echo "Marca -> " + self:marca
+		echo "Modelo -> " + self:modelo
+	}
+	fn crash {
+		let hola = "achus"
+		echo "CRASH"
+	}
+}
 
-for (let i=0;i<10;i=i+1) do
-	echo hola + " - Vez nº " + i
-done
-
-echo hola
+write("hola.txt" "OH DIOS MIO FUNCIONA")
