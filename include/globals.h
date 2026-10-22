@@ -6,7 +6,7 @@
 #define MAX_NATIVE_FUNCS 64
 
 
-
+void cleanAll();
 
 void register_cfunc(EvalCtx *ctx, char *name, NativeFunc func);
 void register_globals(EvalCtx *ctx);

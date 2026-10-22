@@ -56,5 +56,6 @@ int main(size_t argc, char *argv[]) {
 
 	free(buffer);
 	fclose(archivo);
+	cleanAll();
 	return 0;
 }

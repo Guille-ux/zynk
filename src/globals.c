@@ -1,11 +1,107 @@
 #include "../include/globals.h"
 #include "../include/eval.h"
 #include <string.h>
+#include <stdio.h>
+#include <stddef.h>
+#include "../include/lexer.h"
+#include "../include/parser.h"
+#include <stdlib.h>
 
+typedef enum {
+    PTR_RAW,       // kfree plano (para strings sueltos o buffers)
+    PTR_AST,       // parser_free_ast para el árbol
+    PTR_TOKENS     // tu función del lexer para liberar tokens y sus textos internos
+} PtrType;
+
+typedef struct {
+    void *ptr;
+    PtrType type;
+} TrackedItem;
+
+typedef struct {
+    TrackedItem *items;
+    size_t count;
+    size_t capacity;
+} MemTracker;
+
+MemTracker *active_tracker = NULL;
+
+void init_tracker() {
+    active_tracker = kmalloc(sizeof(MemTracker));
+    active_tracker->count = 0;
+    active_tracker->capacity = 64;
+    active_tracker->items = kmalloc(sizeof(TrackedItem) * active_tracker->capacity);
+}
+
+void track_pointer(void *ptr, PtrType type) {
+    if (active_tracker == NULL || ptr == NULL) return;
+    
+    if (active_tracker->count >= active_tracker->capacity) {
+        active_tracker->capacity *= 2;
+        TrackedItem *new_items = kmalloc(sizeof(TrackedItem) * active_tracker->capacity);
+        memcpy(new_items, active_tracker->items, sizeof(TrackedItem) * active_tracker->count);
+        kfree(active_tracker->items);
+        active_tracker->items = new_items;
+    }
+    
+    active_tracker->items[active_tracker->count++] = (TrackedItem){.ptr = ptr, .type = type};
+}
+
+void free_tracked_memory() {
+    if (active_tracker == NULL) return;
+    
+    for (size_t i = 0; i < active_tracker->count; i++) {
+        TrackedItem item = active_tracker->items[i];
+        if (item.ptr != NULL) {
+            if (item.type == PTR_AST) {
+                parser_free_ast((ASTNode*)item.ptr);
+            } else if (item.type == PTR_TOKENS) {
+                lexer_free((Token*)item.ptr); // O free_tokens() según tu cabecera
+            } else {
+                kfree(item.ptr);
+            }
+        }
+    }
+    
+    kfree(active_tracker->items);
+    kfree(active_tracker);
+    active_tracker = NULL;
+}
 
 int how_many=0;
 
 CFunc natives[MAX_NATIVE_FUNCS];
+
+ShellValue native_import(int argc, ShellValue *args) {
+	if (argc < 1) return newNumVal(0);
+	char *str = args[0].as.str;
+	FILE *f = fopen(str, "r");
+	fseek(f, 0, SEEK_END);
+	size_t size = ftell(f);
+	fseek(f, 0, SEEK_SET);
+	char *buffer = kmalloc(size+1);
+	fread(buffer, 1, size, f);
+	buffer[size] = '\0';
+
+	EvalCtx *current = newShellCtx();
+	lexer_init(buffer);
+	Token *t_buff = lexe(NULL);
+	parser_init(t_buff);
+	ASTNode *tree=parse();
+
+	eval(tree, current);
+	track_pointer(tree, PTR_AST);
+	track_pointer(t_buff, PTR_TOKENS);
+	track_pointer(t_buff, PTR_RAW);
+
+	ShellValue val = newInstanceVal(current);
+	free(buffer);
+	return val;
+}
+
+void cleanAll() {
+	free_tracked_memory();
+}
 
 ShellValue native_write(int argc, ShellValue *args) {
     if (argc < 2 || args[0].type != VAL_STRING || args[1].type != VAL_STRING) {
@@ -165,4 +261,5 @@ void register_globals(EvalCtx *ctx) {
 	register_cfunc(ctx, "input", native_input);
 	register_cfunc(ctx, "read", native_read);
 	register_cfunc(ctx, "write", native_write);
+	register_cfunc(ctx, "import", native_import);
 }

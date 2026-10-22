@@ -12,4 +12,3 @@ class Coche {
 	}
 }
 
-write("hola.txt" "OH DIOS MIO FUNCIONA")
