@@ -7,8 +7,10 @@ class Coche {
 		echo "Modelo -> " + self:modelo
 	}
 	fn crash {
-		let hola = "achus"
 		echo "CRASH"
 	}
 }
 
+let my=Coche()
+my:info(my)
+my:crash()

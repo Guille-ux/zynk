@@ -6,6 +6,36 @@
 #include "../include/lexer.h"
 #include "../include/parser.h"
 #include <stdlib.h>
+#include <dlfcn.h>
+
+typedef void (*RegisterLibFunc)(EvalCtx *ctx);
+
+int load_plugins(const char *file, EvalCtx *ctx) {
+	void *handle = dlopen(file, RTLD_NOW);
+	if (!handle) {
+		printf("Err -> Error while Loading .so\n");
+		return 0;
+	}
+	dlerror();
+
+	RegisterLibFunc register_lib = (RegisterLibFunc)dlsym(handle, "register_lib");
+
+	char *error = dlerror();
+	if (error != NULL) {
+		printf("Err -> Error, 'register_lib' not found\n");
+		dlclose(handle);
+	}
+
+	register_lib(ctx);
+	return 0;
+}
+
+ShellValue native_include(int argc, ShellValue *args) {
+	if (argc < 1) return newNumVal(0);
+	char *str = args[0].as.str;
+	load_plugins(str, get_global());
+	return newNumVal(1);
+}
 
 typedef enum {
     PTR_RAW,       // kfree plano (para strings sueltos o buffers)
@@ -262,4 +292,5 @@ void register_globals(EvalCtx *ctx) {
 	register_cfunc(ctx, "read", native_read);
 	register_cfunc(ctx, "write", native_write);
 	register_cfunc(ctx, "import", native_import);
+	register_cfunc(ctx, "include", native_include);
 }

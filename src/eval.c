@@ -42,6 +42,10 @@ void set_global(EvalCtx *ctx) {
 	global = ctx;
 }
 
+EvalCtx *get_global() {
+	return global;
+}
+
 ShellValue newNumVal(double num) {
 	ShellValue val;
 	val.type = VAL_NUMBER;
@@ -105,6 +109,17 @@ void zynk_gc() {
 			current = current->next;
 		}
 	}
+}
+
+ShellValue newObjVal(int size) {
+	ShellValue val;
+	val.type = VAL_OBJ;
+	RealObj *obj = (RealObj*)kmalloc(sizeof(RealObj)+size);
+	memset(obj, 0, sizeof(RealObj)+size);
+	val.as.obj = (Object*)((size_t)obj+sizeof(GCObj));
+	obj->capacity = size;
+	addObj((GCObj*)obj);
+	return val;
 }
 
 ShellValue newFuncVal(EvalCtx *ctx, ASTNode *program) {
@@ -441,7 +456,8 @@ ShellValue ref_add(ShellValue val) {
 	if (val.type==VAL_STRING ||
 	    val.type==VAL_FUNC ||
 	    val.type==VAL_DICT ||
-	    val.type==VAL_ARRAY) {
+	    val.type==VAL_ARRAY ||
+	    val.type==VAL_OBJ) {
 		Obj *data = (Obj*)((size_t)val.as.comodin - sizeof(Obj));
 		data->refc++;
 	}	
@@ -452,7 +468,8 @@ void ref_del(ShellValue val) {
 	if (val.type==VAL_STRING ||
 	    val.type==VAL_FUNC ||
 	    val.type==VAL_DICT ||
-	    val.type==VAL_ARRAY) {
+	    val.type==VAL_ARRAY ||
+	    val.type==VAL_OBJ) {
 		Obj *data = (Obj*)((size_t)val.as.comodin - sizeof(Obj));	
 		if (data->refc != 0) {
 			data->refc--;

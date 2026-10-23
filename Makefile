@@ -1,18 +1,25 @@
-# El makefile para construir la libreria de zynk
-
 BUILD = build
 CC = gcc
-LIBS = 
+LIBS = -ldl
 EXTRA ?= 
 CFLAGS = -Wall -Wextra -c $(EXTRA)
 AR = ar
 ARFLAGS = rcs
 SRC = src
+TARGET_LIB = lib/mylib.so
+LIB_SRC = lib/mylib.c
 MAIN_OBJ = $(BUILD)/zynk.o
 TARGET = $(BUILD)/zynk
 OBJS = $(BUILD)/mbtype.o $(BUILD)/parser.o $(BUILD)/lexer.o $(BUILD)/eval.o $(BUILD)/globals.o
+
+all: $(TARGET)
+lib: $(TARGET_LIB)
 $(TARGET): $(OBJS) $(MAIN_OBJ)
-	$(CC) $(LIBS) -o $(TARGET) $(OBJS) $(MAIN_OBJ)
+	$(CC) -rdynamic $(OBJS) $(MAIN_OBJ) $(LIBS) -o $(TARGET)
+
+# Regla para compilar el plugin dinámico a .so
+$(TARGET_LIB): $(LIB_SRC)
+	$(CC) -shared -fPIC -Wall -Wextra $(EXTRA) -o $@ $(LIB_SRC)
 
 $(BUILD)/globals.o: $(SRC)/globals.c
 	$(CC) $(CFLAGS) -o $(BUILD)/globals.o $(SRC)/globals.c
@@ -39,5 +46,6 @@ $(MAIN_OBJ): $(SRC)/zynk.c
 
 clean: 
 	rm -rf build/*
+	rm -rf lib/*.so
 	rm -rf *.o
-	rm -rf libmbash.a
+	rm -rf $(BUILD)/libzynk.a

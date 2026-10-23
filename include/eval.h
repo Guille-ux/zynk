@@ -22,6 +22,7 @@ typedef enum {
 	VAL_CFUNC,
 	VAL_DICT, // las clases seran diccionarios JAJAJJAJAJAJJA
 	VAL_ARRAY,
+	VAL_OBJ, // objeto no estandar
 } ValType;
 
 struct ZFunc;
@@ -43,6 +44,19 @@ typedef struct GCObj {
 struct CFunc;
 struct ArrayObj;
 struct Array;
+
+
+
+typedef struct Object {
+	int capacity;
+	uint8_t info[];
+} Object;
+
+typedef struct {
+	GCObj data;
+	int capacity;
+	uint8_t info[];
+} RealObj;
 
 typedef struct ShellValue {
 	ValType type;
@@ -144,6 +158,7 @@ typedef struct EvalCtx {
 } EvalCtx;
 
 void growArray(Array *array);
+ShellValue newObjVal(int size);
 ShellValue newArrayVal();
 ShellValue newNumVal(double num);
 ShellValue newStrVal(const char *str);
@@ -166,6 +181,7 @@ void zynk_gc();
  *
  */
 
+EvalCtx *get_global();
 void set_global(EvalCtx *ctx);
 EvalCtx *newShellCtx();
 void midKillShellCtx(EvalCtx *ctx);
