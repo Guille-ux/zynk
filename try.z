@@ -29,5 +29,23 @@ let request = "GET / HTTP/1.1\r\nHost: www.google.com\r\nConnection: close\r\n\r
 
 Net:connect(socket ip port)
 Net:send(socket request)
-echo Net:recv(socket 1)
+
+let text = "\n"
+let new
+let end
+do {
+	new = Net:recv(socket 1)
+	text = text + new
+	end = len(text)
+	echo new
+	if index(text end)=="\n" and index(text end-1) == "\r" and index(text end-2) == "\n" and index(text end-3)=="\r" then
+		echo "CONNECTION ENDED"
+		Net:close(socket)
+		break
+	fi
+	if len(new) < 10 then
+		break
+	fi
+
+} while 1
 

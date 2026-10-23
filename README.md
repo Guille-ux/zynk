@@ -1,100 +1,81 @@
-### Resumen Rápido de la Sintaxis de Zynk
+# Zynk
+*this is my interpreted programming language!*
 
-#### 1. Variables y Asignación
+## Docs
 
-* **Declaración:** Usas la palabra clave `let`:
-```zynk
-let x = 10
-let msg = "Hola Zynk"
-
-```
+Networking lib: [Net](libs/net.md)
+Syntax: [Syntax Documentation (Spanish)](docs/syntax.md)
 
 
-* **Reasignación:** Modificación directa sin `let`:
-```zynk
-x = 20
+
+## High-Level Architecture Overview
 
 ```
-
-
-* **Eliminación de variables:** Usas `del`:
-```zynk
-del x
-
-```
-
-
-
-#### 2. Estructuras de Control de Flujo
-
-* **Condicionales (`if ... then ... else ... fi`):**
-Estilo shell/POSIX claro y explícito:
-```zynk
-if x >= 10 then
-    echo "Es mayor o igual a 10"
-else
-    echo "Es menor"
-fi
-
-```
-
-
-* **Bucle `for` (`for (init; cond; inc) do ... done`):**
-```zynk
-for (let i = 0; i < 5; i = i + 1) do
-    echo i
-done
+Source Code (.z)
+      │
+      ▼
+┌───────────┐
+│   Lexer   │  (lexer.c / mbtype.c)
+└─────┬─────┘  Converts raw source code into structured tokens.
+      │
+      ▼
+┌───────────┐
+│  Parser   │  (parser.c)
+└─────┬─────┘  Builds an Abstract Syntax Tree (AST) using recursive descent.
+      │
+      ▼
+┌───────────┐
+│ Evaluator │  (eval.c)
+└─────┬─────┘  Executes AST nodes with dynamic typing & GC tracking.
+      │
+      ▼
+┌───────────┐
+│ Built-ins │  (globals.c)
+└───────────┘  Provides native standard functions, dynamic libraries (.so), & I/O.
 
 ```
-
-
-* **Bucle `do ... while` / `do { ... } while cond`:**
-En Zynk la estructura del `while` se abre con `do {` y la condición se evalúa al cerrar `} while`:
-```zynk
-do {
-    echo "Sigo aqui"
-} while restando > 0
-
-```
-
-
-* **Control de bucle:** `break` para salir.
-
-#### 3. Funciones y Clases
-
-* **Definición de Función:**
-```zynk
-fn mi_funcion {
-    let respuesta = Net:recv($0, 1)
-    return respuesta
-}
-
-```
-
-
-*(Nota: En tu parser, los argumentos pasados a funciones o scripts se direccionan con `$0`, `$1`, etc.).*
-* **Definición de Clase:**
-```zynk
-class MiEstructura {
-    let estado = 1
-}
-
-```
-
-
-
-#### 4. Tipos de Datos y Operadores
-
-* **Cadenas de Texto:** Comillas dobles `"..."` con soporte nativo de escapes (`\n`, `\r`, `\\`) en el lexer o comillas simples `'...'`.
-* **Comentarios:** Empiezan por `#` hasta el final de la línea.
-* **Operadores Lógicos y Aritméticos:**
-* Matematicas: `+`, `-`, `*`, `/`
-* Comparación: `==`, `!=`, `<`, `>`, `<=`, `>=`
-* Lógicos: `and`, `or`, `!`
-* Comandos/Pipes: `|`, `||`
-
-
 
 ---
 
+### Core Components Summary
 
+#### 1. Entry Point (`zynk.c`)
+
+* Handles CLI execution, loading the source file into memory.
+* Initializes the global environment context (`EvalCtx`) and registers standard native functions.
+* Sequences execution: **Lexing $\rightarrow$ Parsing $\rightarrow$ Evaluating $\rightarrow$ Cleanup**.
+
+#### 2. Lexical Analyzer / Lexer (`lexer.c` & `mbtype.c`)
+
+* Performs tokenization on the source string.
+* Handles identifiers, numerical literals, escaped string literals (`"..."`, `'...'`), comments (`#`), operators (`<=`, `>=`, `!=`, `==`), and control-flow keywords (`let`, `fn`, `if`, `while`, `for`, `class`, `return`, `do`, `done`, etc.).
+* Custom character utilities in `mbtype.c` support standalone/kernel-space execution constraints (like `k_isspace`, `k_isalpha`).
+
+#### 3. Recursive Descent Parser (`parser.c`)
+
+* Constructs the Abstract Syntax Tree (**AST**) out of token arrays.
+* Implements operator precedence parsing for arithmetic, logical, and binary comparisons (`+`, `-`, `*`, `/`, `==`, `!=`, `<`, `>`, `&&`, `||`).
+* Parses key language constructs:
+* **Variable Declarations & Assignments:** `let x = ...`
+* **Functions & Classes:** `fn name { ... }`, `class Name { ... }`
+* **Control Flow:** `if condition then ... else ... fi`, `do { ... } while condition`, `for (...) do ... done`
+* **Member & Method Invocation:** `obj:method()` / bracket access.
+
+
+
+#### 4. Tree-Walking Interpreter & Runtime (`eval.c`)
+
+* Evaluates AST nodes recursively based on the execution context (`EvalCtx`).
+* **Dynamic Type System (`ShellValue`):** Supports numbers, strings, arrays, dictionaries/classes, function objects, and native C function pointers (`CFunc`).
+* **Memory Management & Garbage Collector:** Uses reference counting (`refc`) combined with a mark-and-sweep style cleanup routine (`zynk_gc()`) that periodically runs every $N$ evaluation cycles (`CYCLES_PER_SWEEP`).
+* **Scope & Variables:** Variable lookup uses hash-table indexing (`zhash`) across parent and global scope hierarchies.
+
+#### 5. Native Standard Library & Extensions (`globals.c`)
+
+* **Memory Tracker:** Tracks allocated AST nodes and tokens to prevent memory leaks during script execution.
+* **Dynamic Plugin Support:** `include("plugin.so")` loads C shared objects at runtime using `dlopen()` and registers library functions via `dlsym()`.
+* **Built-in Standard Library:**
+* File I/O: `read()`, `write()`
+* Terminal I/O: `input()`, `echo`
+* Built-in Data Structures: Dynamic array object builder (`Array`) with native `push`, `pop`, and `len` methods.
+* Script imports: `import("other_script.zk")` parses and executes another file as an isolated instance.
