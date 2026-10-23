@@ -126,9 +126,27 @@ Token lexer_next_token() {
 			case ',': advance(); return newToken(TOKEN_COMMA, ",", 1);
 			case ':': advance(); return newToken(TOKEN_COLON, ":", 1);
 			case '.': advance(); return newToken(TOKEN_DOT, ".", 1);
-			case '!': advance(); return newToken(TOKEN_BANG, "!", 1);
-			case '<': advance(); return newToken(TOKEN_LESS, "<", 1);
-			case '>': advance(); return newToken(TOKEN_GREATER, ">", 1);
+			case '!': 
+				advance();
+				if (peek()=='=') {
+					advance();
+					return newToken(TOKEN_BEQ, "!=", 2);
+				}
+				return newToken(TOKEN_BANG, "!", 1);
+			case '<': 
+				advance();
+				if (peek()=='=') {
+					advance();
+					return newToken(TOKEN_LEQ, "<=", 2);
+				}
+				return newToken(TOKEN_LESS, "<", 1);
+			case '>':
+				advance();
+				if (peek()=='=') {
+					advance();
+					return newToken(TOKEN_GEQ, ">=", 2);
+				}
+				return newToken(TOKEN_GREATER, ">", 1);
 			case '|': {
 				advance();
 				if (peek()=='|') {
@@ -162,12 +180,33 @@ Token lexer_next_token() {
 		if (c=='"') {
 			advance();
 			size_t start_pos=current_pos;
+			while (peek() != '"' && peek() != '\0') {	
+				advance();
+			}
+			if (peek() == '\0') return newToken(TOKEN_UNKNOWN, "Unterminated String!", 20);
+			char *buffer = kmalloc(current_pos-start_pos+1);
+			buffer[current_pos-start_pos]='\0';
+			current_pos = start_pos;
+			int i=0;
 			while (peek() != '"' && peek() != '\0') {
+				if (peek()=='\\') {
+					advance();
+					if (peek()=='\\') {
+						buffer[i] = '\\';
+					} else if (peek()=='n') {
+						buffer[i] = '\n';
+					} else if (peek()=='r') {
+						buffer[i] = '\r';
+					}
+				} else {
+					buffer[i] = peek();
+				}
+				i++;
 				advance();
 			}
 			if (peek() == '\0') return newToken(TOKEN_UNKNOWN, "Unterminated String!", 20);
 
-			Token string_tok=newToken(TOKEN_STRING, source + start_pos, current_pos-start_pos);
+			Token string_tok=newToken(TOKEN_STRING, buffer, i);
 			advance();
 			return string_tok;
 		}

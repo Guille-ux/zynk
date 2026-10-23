@@ -14,3 +14,20 @@ class Coche {
 let my=Coche()
 my:info(my)
 my:crash()
+
+
+include("libs/net.so")
+
+let socket = Net:socket()
+
+let hostname = "www.google.com"
+
+let ip = Net:getip(hostname)
+
+let port = 80
+let request = "GET / HTTP/1.1\r\nHost: www.google.com\r\nConnection: close\r\n\r\n"
+
+Net:connect(socket ip port)
+Net:send(socket request)
+echo Net:recv(socket 1)
+
