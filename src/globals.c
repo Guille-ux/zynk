@@ -10,6 +10,13 @@
 
 typedef void (*RegisterLibFunc)(EvalCtx *ctx);
 
+ShellValue native_system(int argc, ShellValue *args) {
+	if (argc < 1) return newNumVal(0);
+	char *str = args[0].as.str;
+	system(str);
+	return newNumVal(1);
+}
+
 int load_plugins(const char *file, EvalCtx *ctx) {
 	void *handle = dlopen(file, RTLD_NOW);
 	if (!handle) {
@@ -293,4 +300,5 @@ void register_globals(EvalCtx *ctx) {
 	register_cfunc(ctx, "write", native_write);
 	register_cfunc(ctx, "import", native_import);
 	register_cfunc(ctx, "include", native_include);
+	register_cfunc(ctx, "system", native_system);
 }
