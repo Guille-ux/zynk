@@ -80,4 +80,4 @@ Source Code (.z)
 * File I/O: `read()`, `write()`
 * Terminal I/O: `input()`, `echo`
 * Built-in Data Structures: Dynamic array object builder (`Array`) with native `push`, `pop`, and `len` methods.
-* Script imports: `import("other_script.zk")` parses and executes another file as an isolated instance.
+* Script imports: `import("other_script.z")` parses and executes another file as an isolated instance.
