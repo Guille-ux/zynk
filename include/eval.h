@@ -132,6 +132,8 @@ typedef struct {
 	struct EvalCtx *ctx;
 } InstanceObj;
 
+
+
 ShellValue newClassVal(struct EvalCtx *ctx, ASTNode *program);
 ShellValue newInstanceVal(struct EvalCtx *ctx);
 

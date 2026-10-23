@@ -291,6 +291,10 @@ void register_cfunc(EvalCtx *ctx, char *name, NativeFunc func) {
 	defShellVarEntry(ctx, name, val);
 }
 
+void register_class(EvalCtx *ctx, char *name, EvalCtx *class) {	
+	defShellVarEntry(ctx, name, newInstanceVal(class));
+}
+
 void register_globals(EvalCtx *ctx) {
 	register_cfunc(ctx, "len", len);
 	register_cfunc(ctx, "index", zindex);

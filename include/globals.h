@@ -11,6 +11,7 @@ int load_plugins(const char *file, EvalCtx *ctx);
 
 
 void register_cfunc(EvalCtx *ctx, char *name, NativeFunc func);
+void register_class(EvalCtx *ctx, char *name, EvalCtx *class);
 void register_globals(EvalCtx *ctx);
 
 
