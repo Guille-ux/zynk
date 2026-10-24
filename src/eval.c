@@ -57,7 +57,7 @@ uint32_t zhash(char *name) {
 	// cosa cutre por ahora
 	uint32_t val = 0;
 	for (int i=0;name[i]!='\0';i++) {
-		val += name[i]*4321 % 100;	
+		val += name[i]*4321;	
 	}
 	return val;
 }
