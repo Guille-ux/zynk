@@ -72,7 +72,7 @@ fn mi_funcion {
 ```
 
 
-*(Nota: En tu parser, los argumentos pasados a funciones o scripts se direccionan con `$0`, `$1`, etc.).*
+*(Nota: los argumentos pasados a funciones o scripts se direccionan con `$0`, `$1`, etc.).*
 * **Definición de Clase:**
 ```zynk
 class MiEstructura {
