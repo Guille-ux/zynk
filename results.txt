@@ -1,0 +1,11 @@
+=== STARTING CPU BENCHMARK (ZYNK) ===
+[Fase 1] Bucle de CPU bruto (10M):
+3.190206
+[Fase 2] Recursividad (Fibonacci 32): 2178309.000000
+4.168539
+[Fase 3] Bucle de estrés do-while (500k):
+0.140572
+-------------------------------------------------------------
+TIEMPO TOTAL ZYNK:
+7.499317
+============================================================-

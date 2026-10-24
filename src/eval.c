@@ -224,7 +224,7 @@ void midKillShellCtx(EvalCtx *ctx) {
 	if (ctx==NULL) return;
 
 	for (size_t i=0;i<ctx->var_cap;i++) {
-		if (ctx->var_table[i].is_set) {
+		if (ctx->var_table[i].is_set && ctx->var_table[i].name!=NULL && ctx->var_table[i].val.as.comodin!=NULL) {
 			ref_del(ctx->var_table[i].val);
 		}
 	}
@@ -244,12 +244,12 @@ EvalCtx *newShellCtx() {
 	}
 	memset((void*)ctx, 0, sizeof(EvalCtx));
 	ctx->global=global;
-	ctx->var_cap=64;
+	ctx->var_cap=16;
 	ctx->argc=16;
 	ctx->var_table = (Var*)kmalloc(sizeof(Var)*ctx->var_cap);
 	ctx->argv = (Var*)kmalloc(sizeof(Var)*ctx->argc);
-	memset(ctx->var_table, 0, ctx->var_cap);
-	memset(ctx->argv, 0, ctx->argc);
+	memset(ctx->var_table, 0, ctx->var_cap * sizeof(Var));
+	memset(ctx->argv, 0, ctx->argc * sizeof(Var));
 	ctx->command_handler = multimodule_handler;
 	/*
 	 * Continuar
@@ -399,15 +399,10 @@ void defShellVarEntry(EvalCtx *ctx, char *name, ShellValue val) {
 	}
 	if (id >= ctx->var_cap) {
 		size_t new_cap = ctx->var_cap * 2;
-		Var *new_table = (Var*)kmalloc(sizeof(Var)*new_cap);
-		if (new_table==NULL) {
-			kprintf("Err -> Out of Memory\n");
-			return;
-		}
-		memcpy((void*)new_table, (const void*)ctx->var_table, ctx->var_cap*sizeof(Var));
-		kfree(ctx->var_table);
+		Var *new_table = realloc(ctx->var_table, new_cap*sizeof(Var));
+		memset((void*)((size_t)new_table+ctx->var_cap*sizeof(Var)), 0, (new_cap-ctx->var_cap) * sizeof(Var));
 		ctx->var_cap=new_cap;
-		ctx->var_table = new_table;
+		ctx->var_table = new_table;	
 	}
 	ref_del(ctx->var_table[id].val);	
 	ctx->var_table[id] = (Var){.val=ref_add(val), .is_exported=false, .is_set=true};
@@ -444,8 +439,10 @@ void setShellVarEntry(EvalCtx *ctx, char *name, ShellValue val) {
 	if (id >= ctx->var_cap) {
 		if (ctx->parent!=NULL) {
 			setShellVarEntry(ctx->parent, name, val);
+			return;
 		}
 		kprintf("Err -> Var isn't defined yet!\n");
+		return;
 	}
 	ref_del(ctx->var_table[id].val);
 	ctx->var_table[id] = (Var){.val=ref_add(val), .is_exported=false, .is_set=true};
@@ -473,6 +470,8 @@ void ref_del(ShellValue val) {
 		Obj *data = (Obj*)((size_t)val.as.comodin - sizeof(Obj));	
 		if (data->refc != 0) {
 			data->refc--;
+		} else {
+			zynk_gc();
 		}
 	}	
 }
@@ -695,7 +694,6 @@ static int evalAssignment(ASTNode *stmt, EvalCtx *ctx) {
 	EvalCtx *rctx = evalMembers(stmt->data.assignment.member, stmt->data.assignment.var_name, ctx, &name);
 	ShellValue val = evalExpr(stmt->data.assignment.expr, ctx);
 	setShellVarEntry(rctx, name, val);
-	ref_add(val);
 	return EVAL_OK;
 }
 
@@ -719,7 +717,7 @@ static int evalIf(ASTNode *stmt, EvalCtx *ctx) {
 	if (is_true) {
 		for (size_t i=0;i<stmt->data.if_stmt.s_then;i++) {
 			status = evalStatement(stmt->data.if_stmt.thenb[i], ctx);
-			if (status == EVAL_BREAK || status == EVAL_ERR || status == EVAL_RET || EVAL_EXIT) return status;
+			if (status == EVAL_BREAK || status == EVAL_ERR || status == EVAL_RET || status == EVAL_EXIT) return status;
 		}
 	} else if (stmt->data.if_stmt.elseb!=NULL) {
 		for (size_t i=0;i<stmt->data.if_stmt.s_else;i++) {
@@ -734,10 +732,7 @@ static int evalWhile(ASTNode *stmt, EvalCtx *ctx) {
 	int status = EVAL_OK;
 	do {
 		for (size_t i=0;i<stmt->data.while_loop.s_body;i++) {
-			cycles = (cycles+1)%CYCLES_PER_SWEEP;
-			if (cycles==0) {
-				zynk_gc();
-			}
+			
 			status = evalStatement(stmt->data.while_loop.body[i], ctx);
 			if (status == EVAL_BREAK) {
 				ctx->should_break = false;
@@ -762,10 +757,7 @@ static int evalFor(ASTNode *stmt, EvalCtx *ctx) {
 	}
 	while (true) {
 		bool keep=false;
-		cycles = (cycles+1)%CYCLES_PER_SWEEP;
-		if (cycles==0) {
-			zynk_gc();
-		}
+		
 		if (stmt->data.for_loop.condition) {
 			ShellValue cond_val = evalExpr(stmt->data.for_loop.condition, ctx);
 			keep = isTruly(cond_val);

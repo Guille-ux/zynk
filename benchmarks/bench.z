@@ -1,0 +1,62 @@
+echo "=== STARTING CPU BENCHMARK (ZYNK) ==="
+
+# -------------------------------------------------------------
+# FASE 1: Bucle intensivo y operaciones matemáticas (10M)
+# -------------------------------------------------------------
+let start_f1 = clock()
+let total = 0.0
+
+for (let i = 0; i < 10000000; i = i + 1) do
+    total = total + (i * 0.5) - (i * 0.25)
+done
+
+let end_f1 = clock()
+let t_f1 = end_f1 - start_f1
+echo "[Fase 1] Bucle de CPU bruto (10M):"
+echo t_f1
+
+# -------------------------------------------------------------
+# FASE 2: Recursividad profunda (Fibonacci 32)
+# -------------------------------------------------------------
+fn fib {
+    let n = $0
+    
+    # Caso base: si n <= 1, devolvemos n
+    if n <= 1 then
+        return n
+    fi
+    
+    # Llamadas recursivas restando 1 y 2 a n
+    # Pasamos el resultado calculado como argumento de la llamada
+    return fib(n - 1) + fib(n - 2)
+}
+
+let start_f2 = clock()
+let res_fib = fib(32)
+let end_f2 = clock()
+let t_f2 = end_f2 - start_f2
+echo "[Fase 2] Recursividad (Fibonacci 32): " + res_fib
+echo t_f2
+
+# -------------------------------------------------------------
+# Fase 3: Bucle de estrés y asignaciones
+# -------------------------------------------------------------
+let start_f3 = clock()
+let acc = 0
+let j = 0
+
+do {
+    acc = acc + j
+    j = j + 1
+} while j < 500000
+
+let end_f3 = clock()
+let t_f3 = end_f3 - start_f3
+echo "[Fase 3] Bucle de estrés do-while (500k):"
+echo t_f3
+
+let total_time = t_f1 + t_f3 + t_f2
+echo "-------------------------------------------------------------"
+echo "TIEMPO TOTAL ZYNK:"
+echo total_time
+echo "============================================================-"

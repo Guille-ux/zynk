@@ -15,14 +15,14 @@ struct EvalCtx;
 
 
 typedef enum {
-	VAL_NONE,
-	VAL_NUMBER,
-	VAL_STRING,
-	VAL_FUNC,
-	VAL_CFUNC,
-	VAL_DICT, // las clases seran diccionarios JAJAJJAJAJAJJA
-	VAL_ARRAY,
-	VAL_OBJ, // objeto no estandar
+	VAL_NONE = 0,
+	VAL_NUMBER = 1,
+	VAL_STRING = 2,
+	VAL_FUNC = 3,
+	VAL_CFUNC = 4,
+	VAL_DICT = 5, // las clases seran diccionarios JAJAJJAJAJAJJA
+	VAL_ARRAY = 6,
+	VAL_OBJ = 7, // objeto no estandar
 } ValType;
 
 struct ZFunc;

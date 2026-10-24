@@ -272,7 +272,7 @@ ShellValue native_array_constructor(int argc, ShellValue *args) {
 
 ShellValue len(int argc, ShellValue *args) {
 	if (argc < 1) return newNumVal(0);
-	if (args[0].type=VAL_STRING) {
+	if (args[0].type==VAL_STRING) {
 		return newNumVal(strlen(args[0].as.str));
 	}
 	return newNumVal(0);
