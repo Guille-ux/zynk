@@ -241,6 +241,7 @@ static ASTNode *parse_statement() {
 
 	else {
 		kprintf("Err -> Unknown Statement!\n");
+		kprintf("Token -> %s\n", current->value);
 		return NULL;
 	}
 }
@@ -427,8 +428,7 @@ static ASTNode *parse_primary_expr() {
 			if (!match(TOKEN_RPAREN)) {
 				kprintf("Err -> Expected ')'!\n");
 				return NULL;
-			}
-			eat();
+			}	
 			break;
 				   }
 		default: {
@@ -879,8 +879,8 @@ static ASTNode **parse_statement_list(size_t *out_s, TokenType *stop_tokens, siz
 			stmt_list = new_stmt_list;
 		}
 		stmt_list[size++]=stmt;
-	}
-	*out_s = size;
+	}	
+	*out_s = size;	
 	return stmt_list;
 }
 
@@ -1064,6 +1064,7 @@ static ASTNode *parse_for() {
 		parser_free_ast(new_node);
 		return NULL;
 	}
+
 
 	while (peek()->type == TOKEN_NEW_LINE) eat();
 

@@ -8,6 +8,15 @@
 #include <stdlib.h>
 #include <dlfcn.h>
 
+// ahora algo del tiempo, para los benchmarks
+#include <sys/time.h>
+ShellValue native_clock(int argc, ShellValue *args) {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    double seconds = (double)tv.tv_sec + (double)tv.tv_usec / 1000000.0;
+    return newNumVal(seconds);
+}
+
 typedef void (*RegisterLibFunc)(EvalCtx *ctx);
 
 ShellValue native_system(int argc, ShellValue *args) {
@@ -305,4 +314,5 @@ void register_globals(EvalCtx *ctx) {
 	register_cfunc(ctx, "import", native_import);
 	register_cfunc(ctx, "include", native_include);
 	register_cfunc(ctx, "system", native_system);
+	register_cfunc(ctx, "clock", native_clock);
 }

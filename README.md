@@ -69,7 +69,7 @@ Source Code (.z)
 
 * Evaluates AST nodes recursively based on the execution context (`EvalCtx`).
 * **Dynamic Type System (`ShellValue`):** Supports numbers, strings, arrays, dictionaries/classes, function objects, and native C function pointers (`CFunc`).
-* **Memory Management & Garbage Collector:** Uses reference counting (`refc`) combined with a mark-and-sweep style cleanup routine (`zynk_gc()`) that periodically runs every $N$ evaluation cycles (`CYCLES_PER_SWEEP`).
+* **Memory Management & Garbage Collector:** Uses reference counting (`refc`) combined with a cleanup routine (`zynk_gc()`) that periodically runs every $N$ evaluation cycles (`CYCLES_PER_SWEEP`).
 * **Scope & Variables:** Variable lookup uses hash-table indexing (`zhash`) across parent and global scope hierarchies.
 
 #### 5. Native Standard Library & Extensions (`globals.c`)

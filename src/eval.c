@@ -734,6 +734,10 @@ static int evalWhile(ASTNode *stmt, EvalCtx *ctx) {
 	int status = EVAL_OK;
 	do {
 		for (size_t i=0;i<stmt->data.while_loop.s_body;i++) {
+			cycles = (cycles+1)%CYCLES_PER_SWEEP;
+			if (cycles==0) {
+				zynk_gc();
+			}
 			status = evalStatement(stmt->data.while_loop.body[i], ctx);
 			if (status == EVAL_BREAK) {
 				ctx->should_break = false;
@@ -758,6 +762,10 @@ static int evalFor(ASTNode *stmt, EvalCtx *ctx) {
 	}
 	while (true) {
 		bool keep=false;
+		cycles = (cycles+1)%CYCLES_PER_SWEEP;
+		if (cycles==0) {
+			zynk_gc();
+		}
 		if (stmt->data.for_loop.condition) {
 			ShellValue cond_val = evalExpr(stmt->data.for_loop.condition, ctx);
 			keep = isTruly(cond_val);

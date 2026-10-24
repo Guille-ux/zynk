@@ -15,6 +15,7 @@ let my=Coche()
 my:info(my)
 my:crash()
 
+let start = clock()
 
 include("libs/net.so")
 
@@ -49,3 +50,4 @@ do {
 
 } while 1
 
+echo "Elapsed Time: " + (clock() - start)
