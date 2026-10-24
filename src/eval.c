@@ -37,6 +37,8 @@ int cycles=0;
 #define CYCLES_PER_SWEEP 100 // es decir 100 expresiones entre cada
 			     // pasada
 
+
+
 void set_global(EvalCtx *ctx) {
 	ctx->global = NULL;
 	global = ctx;
@@ -109,6 +111,17 @@ void zynk_gc() {
 			current = current->next;
 		}
 	}
+}
+
+bool isHeap(void *ptr) {
+	GCObj *current = obj_pool;
+	while (current!=NULL) {
+		if (((size_t)(&current->obj)+sizeof(Obj))==(size_t)ptr) {
+			return true;
+		}
+		current = current->next;
+	}
+	return false;
 }
 
 ShellValue newObjVal(int size) {
@@ -277,11 +290,11 @@ void killShellCtx(EvalCtx *ctx) {
 
 	for (size_t i=0;i<ctx->var_cap;i++) {
 		if (ctx->var_table[i].is_set) {
-			freeVal(ctx->var_table[i].val);
+			ref_del(ctx->var_table[i].val);
 		}
 	}
 	for (size_t i=0;i<ctx->arg_used;i++) {
-		freeVal(ctx->argv[i].val);
+		ref_del(ctx->argv[i].val);
 	}
 	kfree(ctx->var_table);
 	kfree(ctx->argv);
@@ -450,6 +463,7 @@ void setShellVarEntry(EvalCtx *ctx, char *name, ShellValue val) {
 }
 
 ShellValue ref_add(ShellValue val) {
+	if (!isHeap(val.as.comodin)) return val;
 	if (val.type==VAL_STRING ||
 	    val.type==VAL_FUNC ||
 	    val.type==VAL_DICT ||
@@ -462,6 +476,7 @@ ShellValue ref_add(ShellValue val) {
 }
 
 void ref_del(ShellValue val) {
+	if (!isHeap(val.as.comodin)) return;
 	if (val.type==VAL_STRING ||
 	    val.type==VAL_FUNC ||
 	    val.type==VAL_DICT ||

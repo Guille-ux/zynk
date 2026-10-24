@@ -38,7 +38,7 @@ do {
 	new = Net:recv(socket 1)
 	text = text + new
 	end = len(text)
-	echo new
+	#echo new
 	if index(text end)=="\n" and index(text end-1) == "\r" and index(text end-2) == "\n" and index(text end-3)=="\r" then
 		echo "CONNECTION ENDED"
 		Net:close(socket)
