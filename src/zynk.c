@@ -7,7 +7,7 @@
 #include "../include/globals.h"
 
 
-int main(size_t argc, char *argv[]) {
+int main(int argc, char *argv[]) {
 	if (argc < 2) {
 		printf("Uso: %s <nombre_del_archivo>\n", argv[0]);
 		return 1;
