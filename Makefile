@@ -2,7 +2,8 @@ BUILD = build
 CC = gcc
 LIBS = -ldl
 EXTRA ?= 
-CFLAGS = -Wall -Wextra -c $(EXTRA)
+CFLAGS = -Wall -Wextra -c $(EXTRA) -O3
+CF2 = $(EXTRA) -O3 -flto
 AR = ar
 ARFLAGS = rcs
 SRC = src
@@ -15,7 +16,7 @@ OBJS = $(BUILD)/mbtype.o $(BUILD)/parser.o $(BUILD)/lexer.o $(BUILD)/eval.o $(BU
 all: $(TARGET)
 lib: $(TARGET_LIB)
 $(TARGET): $(OBJS) $(MAIN_OBJ)
-	$(CC) -rdynamic $(OBJS) $(MAIN_OBJ) $(LIBS) -o $(TARGET)
+	$(CC) $(CF2) -rdynamic $(OBJS) $(MAIN_OBJ) $(LIBS) -o $(TARGET)
 
 # Regla para compilar el plugin dinámico a .so
 $(TARGET_LIB): $(LIB_SRC)
