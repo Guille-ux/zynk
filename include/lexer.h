@@ -72,10 +72,10 @@ typedef enum {
 	 */ 
 	TOKEN_EOF,
 	TOKEN_UNKNOWN,
-} TokenType;
+} LTokenType;
 
 typedef struct {
-	TokenType type;
+	LTokenType type;
 	char *value;
 } Token;
 

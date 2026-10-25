@@ -90,7 +90,7 @@ typedef struct VarDelNode {
 } VarDelNode;
 
 typedef struct BinExprNode {
-	TokenType op;
+	LTokenType op;
 	struct ASTNode *left;
 	struct ASTNode *right;
 } BinExprNode;
@@ -126,7 +126,7 @@ typedef struct RetNode {
 } RetNode;
 
 typedef struct UnaryNode {
-	TokenType op;
+	LTokenType op;
 	struct ASTNode *expr;
 } UnaryNode;
 

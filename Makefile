@@ -1,9 +1,10 @@
 BUILD = build
-CC = gcc
-LIBS = -ldl
+OS ?= linux
+CC ?= gcc
+LIBS ?= -ldl
 EXTRA ?= 
 CFLAGS = -Wall -Wextra -c $(EXTRA) -O3
-CF2 = $(EXTRA) -O3 -flto
+CF2 = $(EXTRA) -O3 -flto -rdynamic
 AR = ar
 ARFLAGS = rcs
 SRC = src
@@ -13,10 +14,22 @@ MAIN_OBJ = $(BUILD)/zynk.o
 TARGET = $(BUILD)/zynk
 OBJS = $(BUILD)/mbtype.o $(BUILD)/parser.o $(BUILD)/lexer.o $(BUILD)/eval.o $(BUILD)/globals.o
 
+ifeq ($(OS),windows)
+	CC = x86_64-w64-mingw32-gcc
+	CFLAGS = -D_WIN32 -Wall -Wextra -c $(EXTRA) -O3
+	CF2 = $(EXTRA) -O3 -flto
+	LIBS = 
+else
+	CC = gcc
+	CFLAGS = -D_LINUX -Wall -Wextra -c $(EXTRA) -O3
+endif
+
 all: $(TARGET)
 lib: $(TARGET_LIB)
+
+
 $(TARGET): $(OBJS) $(MAIN_OBJ)
-	$(CC) $(CF2) -rdynamic $(OBJS) $(MAIN_OBJ) $(LIBS) -o $(TARGET)
+	$(CC) $(CF2) $(OBJS) $(MAIN_OBJ) $(LIBS) -o $(TARGET)
 
 # Regla para compilar el plugin dinámico a .so
 $(TARGET_LIB): $(LIB_SRC)

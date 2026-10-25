@@ -28,7 +28,7 @@ static char peek() {
 	return source[current_pos];
 }
 
-static Token newToken(TokenType type, const char *start, size_t len) {
+static Token newToken(LTokenType type, const char *start, size_t len) {
 	Token token;
 	token.type = type;
 	if (len==0) {
