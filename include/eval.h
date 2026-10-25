@@ -69,7 +69,7 @@ typedef struct ShellValue {
 		struct Object *obj;
 		struct Array *arr;
 	} as;
-	uint32_t refc; // contador de referencias, solo valido en strings
+	uint32_t refc; // no se
 } ShellValue;
 
 typedef ShellValue (*NativeFunc)(int argc, ShellValue *args);

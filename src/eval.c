@@ -55,13 +55,14 @@ ShellValue newNumVal(double num) {
 	return val;
 }
 
+// FNV-1a 32-bit hash function (Public Domain - Fowler/Noll/Vo)
 uint32_t zhash(char *name) {
-	// cosa cutre por ahora
-	uint32_t val = 0;
-	for (int i=0;name[i]!='\0';i++) {
-		val += name[i]*4321;	
-	}
-	return val;
+    uint32_t hash = 2166136261u;
+    while (*name) {
+        hash ^= (uint8_t)(*name++);
+        hash *= 16777619u;
+    }
+    return hash;
 }
 
 void addObj(GCObj *obj) {
