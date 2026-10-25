@@ -18,10 +18,16 @@ ifeq ($(OS),windows)
 	CC = x86_64-w64-mingw32-gcc
 	CFLAGS = -D_WIN32 -Wall -Wextra -c $(EXTRA) -O3
 	CF2 = $(EXTRA) -O3 -flto
-	LIBS = 
+	# Añadimos las librerías necesarias de la API de Windows para que el linker encuentre LoadLibraryA, etc.
+	LIBS = -lkernel32 -luser32
+	TARGET_LIB = lib/mylib.dll
+	TARGET = $(BUILD)/zynk.exe
 else
 	CC = gcc
 	CFLAGS = -D_LINUX -Wall -Wextra -c $(EXTRA) -O3
+	LIBS = -ldl
+	TARGET_LIB = lib/mylib.so
+	TARGET = $(BUILD)/zynk
 endif
 
 all: $(TARGET)

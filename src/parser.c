@@ -35,7 +35,7 @@ static ASTNode *parse_expression();
 static ASTNode *parse_unary_expr();
 static ASTNode *parse_primary_expr();
 static ASTNode *parse_class_def();
-static ASTNode **parse_statement_list(size_t *out_s, TokenType *stop_tokens, size_t n_stop_tokens);
+static ASTNode **parse_statement_list(size_t *out_s, LTokenType *stop_tokens, size_t n_stop_tokens);
 static ASTNode **parse_expression_list(size_t *argc);
 
 static Token *peek() {
@@ -51,7 +51,7 @@ static Token *eat() {
 	return &tokens[token_index++];
 }
 
-static bool match(TokenType type) {
+static bool match(LTokenType type) {
 	if (peek()->type != type) return false;
 	token_index++;
 	return true;
@@ -580,7 +580,7 @@ static ASTNode *parse_term() {
 }
 
 // Tabla de precedencia de operadores  
-static int get_precedence(TokenType type) {
+static int get_precedence(LTokenType type) {
     switch(type) {
         case TOKEN_MUL: 
         case TOKEN_DIV: 
@@ -795,7 +795,7 @@ static ASTNode *parse_return() {
 		return NULL;
 	}
 	Token *ret_k=eat();
-	TokenType next = peek()->type;
+	LTokenType next = peek()->type;
 	if     (next != TOKEN_NEW_LINE &&
 		next != TOKEN_SEMICOLON &&
 		next != TOKEN_COMMA &&
@@ -826,7 +826,7 @@ static ASTNode *parse_break() {
 	return new_node;
 }
 
-static ASTNode **parse_statement_list(size_t *out_s, TokenType *stop_tokens, size_t n_stop_tokens) {
+static ASTNode **parse_statement_list(size_t *out_s, LTokenType *stop_tokens, size_t n_stop_tokens) {
 	ASTNode **stmt_list = NULL;
 	size_t size = 0;
 	size_t cap = 4;
@@ -909,7 +909,7 @@ static ASTNode *parse_if() {
 	while (peek()->type == TOKEN_NEW_LINE) {
 		eat();
 	}
-	TokenType then_stop_toks[] = {TOKEN_FI, TOKEN_ELSE};
+	LTokenType then_stop_toks[] = {TOKEN_FI, TOKEN_ELSE};
 
 	new_node->data.if_stmt.thenb = parse_statement_list(&(new_node->data.if_stmt.s_then), then_stop_toks, 2);
 	if (new_node->data.if_stmt.thenb == NULL || new_node->data.if_stmt.s_then==0) {
@@ -925,7 +925,7 @@ static ASTNode *parse_if() {
 		while (peek()->type==TOKEN_NEW_LINE) {
 			eat();
 		}
-		TokenType else_stop_toks[] = {TOKEN_FI};
+		LTokenType else_stop_toks[] = {TOKEN_FI};
 		new_node->data.if_stmt.elseb = parse_statement_list(
 				&(new_node->data.if_stmt.s_else),
 				else_stop_toks,
@@ -967,7 +967,7 @@ static ASTNode *parse_while() {
 
 	while (peek()->type==TOKEN_NEW_LINE) eat();
 
-	TokenType body_stop[] = {TOKEN_RBRACE};
+	LTokenType body_stop[] = {TOKEN_RBRACE};
 	new_node->data.while_loop.body = parse_statement_list(
 			&(new_node->data.while_loop.s_body),
 			body_stop,
@@ -1068,7 +1068,7 @@ static ASTNode *parse_for() {
 
 	while (peek()->type == TOKEN_NEW_LINE) eat();
 
-	TokenType body_stop[] = {TOKEN_DONE};
+	LTokenType body_stop[] = {TOKEN_DONE};
 
 	new_node->data.for_loop.body = parse_statement_list(
 			&(new_node->data.for_loop.s_body),
