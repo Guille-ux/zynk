@@ -23,7 +23,9 @@ jobs:
       - name: Clean previous builds
         run: |
           make clean
-
+      - name: Create build directories
+        run: |
+          mkdir -p build lib
       - name: Compile with Make
         run: |
           make
@@ -51,7 +53,9 @@ jobs:
       - name: Clean previous builds
         run: |
           make clean
-
+      - name: Create build directories
+        run: |
+          mkdir -p build lib
       - name: Compile with Make for Windows
         run: |
           make OS=windows
