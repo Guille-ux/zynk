@@ -9,7 +9,7 @@ Networking lib: [Net](libs/net.md)
 Syntax: [Syntax Documentation (Spanish)](docs/syntax.md)
 
 
-Stdlib : [Built-ins Documentation (Spanish)](docs/globals.md) 
+Built-ins : [Built-ins Documentation (Spanish)](docs/globals.md) 
 
 
 
