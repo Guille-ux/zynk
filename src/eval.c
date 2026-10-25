@@ -714,7 +714,6 @@ static int evalEcho(ASTNode *stmt, EvalCtx *ctx) {
 			} else if (rctx->var_table[i].val.type==VAL_NUMBER){
 				printf("%lf\n", rctx->var_table[i].val.as.num);
 			}
-			printf("\n");
 		}
 	} else {
 		kprintf("Err -> Unknown type\n");
