@@ -1,0 +1,104 @@
+# To display the perf.data header info, please use --header/--header-only options.
+#
+#
+# Total Lost Samples: 0
+#
+# Samples: 9K of event 'cpu/cycles/Pu'
+# Event count (approx.): 9863781594
+#
+# Overhead  Command  Shared Object         Symbol                    
+# ........  .......  ....................  ..........................
+#
+    26.56%  zynk     zynk                  [.] evalBinExpr
+    16.93%  zynk     zynk                  [.] evalExpr
+    13.57%  zynk     zynk                  [.] getShellVarEntry
+     7.82%  zynk     zynk                  [.] evalStatement.part.0
+     7.60%  zynk     zynk                  [.] setShellVarEntry
+     3.71%  zynk     zynk                  [.] midKillShellCtx.part.0
+     3.35%  zynk     zynk                  [.] eval.part.0
+     2.19%  zynk     zynk                  [.] evalFuncCall
+     2.11%  zynk     libc.so.6             [.] __libc_calloc
+     1.52%  zynk     zynk                  [.] defShellVarEntry
+     1.31%  zynk     libc.so.6             [.] cfree
+     1.25%  zynk     libc.so.6             [.] 0x0000000000188ba2
+     1.19%  zynk     libc.so.6             [.] 0x0000000000188bb0
+     1.13%  zynk     zynk                  [.] strcmp@plt
+     1.10%  zynk     libc.so.6             [.] 0x0000000000188bbd
+     1.09%  zynk     libc.so.6             [.] 0x0000000000188b88
+     1.05%  zynk     libc.so.6             [.] 0x0000000000188bb3
+     0.72%  zynk     zynk                  [.] newShellCtx
+     0.58%  zynk     libc.so.6             [.] 0x0000000000186e54
+     0.53%  zynk     libc.so.6             [.] 0x0000000000188b9c
+     0.40%  zynk     libc.so.6             [.] 0x0000000000186e62
+     0.38%  zynk     libc.so.6             [.] 0x0000000000188b96
+     0.28%  zynk     libc.so.6             [.] 0x0000000000186e0f
+     0.25%  zynk     libc.so.6             [.] 0x0000000000188b90
+     0.23%  zynk     libc.so.6             [.] 0x0000000000188ba8
+     0.23%  zynk     zynk                  [.] free@plt
+     0.22%  zynk     libc.so.6             [.] 0x0000000000186e2b
+     0.20%  zynk     libc.so.6             [.] 0x0000000000186e7f
+     0.20%  zynk     libc.so.6             [.] 0x0000000000186dd7
+     0.20%  zynk     libc.so.6             [.] 0x0000000000188ebf
+     0.19%  zynk     libc.so.6             [.] 0x0000000000188bbb
+     0.18%  zynk     libc.so.6             [.] 0x0000000000186dcd
+     0.18%  zynk     libc.so.6             [.] 0x0000000000188ed5
+     0.18%  zynk     zynk                  [.] calloc@plt
+     0.15%  zynk     libc.so.6             [.] 0x0000000000186e6a
+     0.12%  zynk     libc.so.6             [.] 0x0000000000188bac
+     0.10%  zynk     libc.so.6             [.] 0x0000000000188f4d
+     0.09%  zynk     libc.so.6             [.] 0x0000000000186df8
+     0.09%  zynk     libc.so.6             [.] 0x0000000000186e3f
+     0.09%  zynk     libc.so.6             [.] 0x0000000000188ece
+     0.06%  zynk     libc.so.6             [.] 0x0000000000186e1d
+     0.06%  zynk     libc.so.6             [.] 0x0000000000188bb7
+     0.05%  zynk     libc.so.6             [.] 0x0000000000186e64
+     0.02%  zynk     libc.so.6             [.] 0x0000000000186e24
+     0.02%  zynk     libc.so.6             [.] 0x0000000000186df0
+     0.02%  zynk     libc.so.6             [.] 0x00000000000a4f0e
+     0.02%  zynk     libc.so.6             [.] 0x0000000000188eb0
+     0.02%  zynk     libc.so.6             [.] 0x0000000000186e78
+     0.01%  zynk     libc.so.6             [.] 0x00000000000a61b8
+     0.01%  zynk     libc.so.6             [.] 0x0000000000188b8b
+     0.01%  zynk     libc.so.6             [.] 0x00000000000a4ff2
+     0.01%  zynk     libc.so.6             [.] 0x00000000000a7c7d
+     0.01%  zynk     libc.so.6             [.] 0x00000000000a6159
+     0.01%  zynk     libc.so.6             [.] 0x00000000000a6fb0
+     0.01%  zynk     libc.so.6             [.] 0x00000000000a6ee1
+     0.01%  zynk     libc.so.6             [.] 0x00000000000a758e
+     0.01%  zynk     libc.so.6             [.] 0x00000000000a7246
+     0.01%  zynk     libc.so.6             [.] 0x00000000000a6f9b
+     0.01%  zynk     libc.so.6             [.] 0x00000000000a7bd4
+     0.01%  zynk     libc.so.6             [.] 0x00000000000a6e0d
+     0.01%  zynk     libc.so.6             [.] 0x0000000000186de8
+     0.01%  zynk     libc.so.6             [.] 0x00000000000a62c4
+     0.01%  zynk     libc.so.6             [.] 0x00000000000a625e
+     0.01%  zynk     libc.so.6             [.] 0x00000000000a6fb7
+     0.01%  zynk     libc.so.6             [.] 0x00000000000a4f0c
+     0.01%  zynk     libc.so.6             [.] 0x00000000000a4eed
+     0.01%  zynk     libc.so.6             [.] 0x00000000000a712a
+     0.01%  zynk     libc.so.6             [.] 0x00000000000a6154
+     0.01%  zynk     libc.so.6             [.] 0x00000000000a7be2
+     0.01%  zynk     libc.so.6             [.] 0x00000000000a7580
+     0.01%  zynk     libc.so.6             [.] 0x0000000000186e71
+     0.01%  zynk     libc.so.6             [.] 0x00000000000a5049
+     0.01%  zynk     libc.so.6             [.] 0x00000000000a505a
+     0.01%  zynk     libc.so.6             [.] 0x00000000000a7876
+     0.01%  zynk     libc.so.6             [.] 0x00000000000a77ea
+     0.01%  zynk     libc.so.6             [.] 0x00000000000a7c08
+     0.01%  zynk     libc.so.6             [.] 0x00000000000a616d
+     0.01%  zynk     libc.so.6             [.] 0x00000000000a74cd
+     0.01%  zynk     libc.so.6             [.] 0x00000000000a5007
+     0.01%  zynk     libc.so.6             [.] 0x00000000000a615d
+     0.01%  zynk     libc.so.6             [.] 0x00000000000a7122
+     0.01%  zynk     libc.so.6             [.] 0x0000000000186e09
+     0.01%  zynk     libc.so.6             [.] 0x00000000000a62c0
+     0.01%  zynk     libc.so.6             [.] 0x00000000000a7300
+     0.01%  zynk     libc.so.6             [.] 0x0000000000186e07
+     0.00%  zynk     libc.so.6             [.] 0x00000000000a710d
+     0.00%  zynk     ld-linux-x86-64.so.2  [.] 0x0000000000025534
+     0.00%  zynk     libc.so.6             [.] strcpy
+
+
+#
+# (Tip: For latency profiling, try: perf record/report --latency)
+#

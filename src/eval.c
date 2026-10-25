@@ -329,7 +329,6 @@ void delShellVarEntry(EvalCtx *ctx, char *name) {
 }
 
 Var *getShellVarEntry(EvalCtx *ctx, char *name) {
-
 	if (name==NULL) return NULL;
 	size_t id=0;
 	size_t s_val = zhash(name) % ctx->var_cap;
@@ -670,6 +669,11 @@ static EvalCtx *evalMembers(ASTNode *stmt, char *name, EvalCtx *ctx, char **onam
 			}
 			current = current->data.member.member;
 		} else {
+			Var *m_var = getShellVarEntrySilent(rctx, rname);
+            		if (m_var != NULL && m_var->val.type == VAL_DICT) {
+                		InstanceObj *inst = (InstanceObj*)((size_t)m_var->val.as.comodin - sizeof(GCObj));
+                		rctx = inst->ctx;
+            		}
 			break;
 		}
 	}
@@ -818,7 +822,7 @@ static ShellValue evalNum(ASTNode *num) {
 }
 
 static ShellValue evalStr(ASTNode *str) {
-	return newStrVal((const char*)str->data.string_lit);
+	return (ShellValue){.type=VAL_STRING, .as.str=str->data.string_lit};
 }
 
 static ShellValue evalVarRef(ASTNode *ref, EvalCtx *ctx) {
