@@ -151,7 +151,7 @@
 
 
 
-### `index(container, i)`
+### `index(container i)`
 
 * **Descripción:** Permite acceder de forma indexada a un elemento dentro de una secuencia (strings o arrays).
 
