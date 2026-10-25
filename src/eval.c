@@ -657,7 +657,7 @@ static EvalCtx *evalMembers(ASTNode *stmt, char *name, EvalCtx *ctx, char **onam
 		
 		ShellValue val = evalExpr(current->data.member.expr, ctx);
 		if (val.type == VAL_STRING) {
-			rname = val.as.str;
+			rname = ref_add(val).as.str;
 		}
 
 		
@@ -703,6 +703,19 @@ static int evalEcho(ASTNode *stmt, EvalCtx *ctx) {
 		kprintf("%f\n", val.as.num);
 	} else if (val.type == VAL_STRING) {
 		kprintf("%s\n", (const char *)val.as.str);
+	} else if (val.type == VAL_DICT) {
+		InstanceObj *inst = (InstanceObj*)((size_t)val.as.comodin - sizeof(GCObj));
+		EvalCtx *rctx = inst->ctx;	
+		for (int i=0;i<rctx->var_cap;i++) {
+			if (rctx->var_table[i].name==NULL) continue;
+			printf("Name: %s -> ", rctx->var_table[i].name);
+			if (rctx->var_table[i].val.type==VAL_STRING) {
+				printf("%s\n", rctx->var_table[i].val.as.str);
+			} else if (rctx->var_table[i].val.type==VAL_NUMBER){
+				printf("%lf\n", rctx->var_table[i].val.as.num);
+			}
+			printf("\n");
+		}
 	} else {
 		kprintf("Err -> Unknown type\n");
 	}
@@ -992,8 +1005,6 @@ static ShellValue evalBinExpr(ASTNode *expr, EvalCtx *ctx) {
 		}
 	}
 
-	ref_del(left);
-	ref_del(right);
 	return result;
 }
 
