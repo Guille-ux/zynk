@@ -6,7 +6,6 @@
 #include "../include/lexer.h"
 #include "../include/parser.h"
 #include <stdlib.h>
-#include <dlfcn.h>
 
 // ahora algo del tiempo, para los benchmarks
 #include <sys/time.h>
@@ -26,25 +25,51 @@ ShellValue native_system(int argc, ShellValue *args) {
 	return newNumVal(1);
 }
 
+#ifdef _WIN32
+#include <windows.h>
+typedef void (*RegisterLibFunc)(EvalCtx *ctx);
+
 int load_plugins(const char *file, EvalCtx *ctx) {
-	void *handle = dlopen(file, RTLD_NOW);
-	if (!handle) {
-		printf("Err -> Error while Loading .so\n");
-		return 0;
-	}
-	dlerror();
+ 
+    HMODULE handle = LoadLibraryA(file);
+    if (!handle) {
+        printf("Err -> Error while Loading .dll\n");
+        return 0;
+    }
 
-	RegisterLibFunc register_lib = (RegisterLibFunc)dlsym(handle, "register_lib");
+    RegisterLibFunc register_lib = (RegisterLibFunc)GetProcAddress(handle, "register_lib");
+    if (!register_lib) {
+        printf("Err -> Error, 'register_lib' not found\n");
+        FreeLibrary(handle);
+        return 0;
+    }
 
-	char *error = dlerror();
-	if (error != NULL) {
-		printf("Err -> Error, 'register_lib' not found\n");
-		dlclose(handle);
-	}
-
-	register_lib(ctx);
-	return 0;
+    register_lib(ctx);
+    return 0;
 }
+#else
+#include <dlfcn.h>
+
+int load_plugins(const char *file, EvalCtx *ctx) {
+    void *handle = dlopen(file, RTLD_NOW);
+    if (!handle) {
+        printf("Err -> Error while Loading .so\n");
+        return 0;
+    }
+    dlerror();
+
+    RegisterLibFunc register_lib = (RegisterLibFunc)dlsym(handle, "register_lib");
+    char *error = dlerror();
+    if (error != NULL) {
+        printf("Err -> Error, 'register_lib' not found\n");
+        dlclose(handle);
+        return 0;
+    }
+
+    register_lib(ctx);
+    return 0;
+}
+#endif
 
 ShellValue native_include(int argc, ShellValue *args) {
 	if (argc < 1) return newNumVal(0);

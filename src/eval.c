@@ -291,6 +291,7 @@ void killShellCtx(EvalCtx *ctx) {
 
 	for (size_t i=0;i<ctx->var_cap;i++) {
 		if (ctx->var_table[i].is_set) {
+			ref_del(*(ShellValue*)((size_t)ctx->var_table[i].name-sizeof(ValType)));
 			ref_del(ctx->var_table[i].val);
 		}
 	}
