@@ -1,0 +1,64 @@
+name: Zynk Build Pipeline
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  build-linux:
+    name: Build Linux (Makefile)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential
+
+      - name: Clean previous builds
+        run: |
+          make clean
+
+      - name: Compile with Make
+        run: |
+          make
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: zynk-linux-binaries
+          path: |
+            build/zynk
+
+  build-windows:
+    name: Build Windows Cross-Compile (Makefile)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install MinGW-w64
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mingw-w64
+
+      - name: Clean previous builds
+        run: |
+          make clean
+
+      - name: Compile with Make for Windows
+        run: |
+          make OS=windows
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: zynk-windows-binaries
+          path: |
+            build/zynk.exe
