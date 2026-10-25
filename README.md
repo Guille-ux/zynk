@@ -9,6 +9,9 @@ Networking lib: [Net](libs/net.md)
 Syntax: [Syntax Documentation (Spanish)](docs/syntax.md)
 
 
+Stdlib : [Built-ins Documentation (Spanish)](docs/globals.md) 
+
+
 
 ## High-Level Architecture Overview
 
