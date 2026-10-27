@@ -7,6 +7,25 @@
 #include "../include/parser.h"
 #include <stdlib.h>
 
+ShellValue native_float(int argc, ShellValue *args) {
+	if (argc < 1) return newNumVal(-1);
+	return newNumVal(atof(args[0].as.str));
+}
+
+ShellValue native_str(int argc, ShellValue *args) {
+	if (argc < 1) return newNumVal(-1);
+	char buffer[512];
+	snprintf(buffer, sizeof(buffer), "%lf", args[0].as.num);
+	buffer[511] = '\0';
+	return newStrVal(buffer);
+}
+
+ShellValue native_args(int argc, ShellValue *args) {
+	if (argc < 1) return newNumVal(-1);
+	return getShellArg(get_global(), (size_t)args[0].as.num);
+}
+	
+
 // ahora algo del tiempo, para los benchmarks
 #include <sys/time.h>
 ShellValue native_clock(int argc, ShellValue *args) {
@@ -340,4 +359,7 @@ void register_globals(EvalCtx *ctx) {
 	register_cfunc(ctx, "include", native_include);
 	register_cfunc(ctx, "system", native_system);
 	register_cfunc(ctx, "clock", native_clock);
+	register_cfunc(ctx, "arg", native_args);
+	register_cfunc(ctx, "float", native_float);
+	register_cfunc(ctx, "str", native_str);
 }

@@ -17,6 +17,10 @@ int main(int argc, char *argv[]) {
 	set_global(global);
 	
 	register_globals(global);
+	addShellArg(global, newNumVal((double)argc));
+	for (int i=0;i<argc;i++) {
+		addShellArg(global, newStrVal(argv[i]));
+	}
 
 	FILE *archivo = fopen(argv[1], "r");
 

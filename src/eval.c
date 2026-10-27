@@ -926,17 +926,17 @@ static ShellValue evalBinExpr(ASTNode *expr, EvalCtx *ctx) {
 			if (expr->data.binary_expr.op==TOKEN_PLUS) {
 				char *right_str;
 				char *left_str;
-				char num_buff[66];
+				char num_buff[512];
 				if (left.type == VAL_STRING) {
 					left_str = left.as.str;
 				} else {
-					ltoa(left.as.num, num_buff);
+					snprintf(num_buff, 512, "%lf", left.as.num);
 					left_str = num_buff;
 	
 				} if (right.type == VAL_STRING) {
 					right_str = right.as.str;
 				} else {
-					ltoa(right.as.num, num_buff);
+					snprintf(num_buff, 512, "%lf", right.as.num);
 					right_str = num_buff;
 				}
 				char *concat = (char*)kmalloc(strlen(left_str)+strlen(right_str)+1);
