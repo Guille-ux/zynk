@@ -1,5 +1,32 @@
 ## 🕒 Funciones de Sistema y Utilidades
 
+### `arg(n)`
+* **Descripción:** Devuelve el argumento n de los que recibio el programa (note que el primero es el número de argumentos).
+
+
+* **Uso típico:** Acceder a la información que se le proporciono al programa como argumento.
+
+
+* **Retorno:** Una string (`ShellValue`) con el valor del argumento.
+  
+### `float(string)`
+* **Descripción:** convierte una cadena de texto a un double.
+
+
+* **Uso típico:** extraer números de un archivo de texto.
+
+
+* **Retorno:** Un número decimal (`ShellValue` numérico) con el valor de la string.
+  
+### `str(number)`
+* **Descripción:** devuelve un número representado en forma de cadena de texto.
+
+
+* **Uso típico:** Convertir un valor númerico en string para poder usar un número como llave de un diccionario.
+
+
+* **Retorno:** una string con el valor del número que se le paso como argumento.
+
 ### `clock()`
 
 * **Descripción:** Devuelve el tiempo actual del sistema en segundos (con precisión de microsegundos mediante `gettimeofday`).
