@@ -199,6 +199,10 @@ Token lexer_next_token() {
 						buffer[i] = '\r';
 					} else if (peek()=='t') {
 						buffer[i] = '\t';
+					} else if (peek()=='0') {
+						buffer[i] = '\0';
+					} else if (peek()=='"') {
+						buffer[i] = '"';
 					} else {
 						buffer[i] = peek();
 					}

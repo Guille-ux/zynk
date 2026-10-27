@@ -7,6 +7,20 @@
 #include "../include/parser.h"
 #include <stdlib.h>
 
+ShellValue native_chr(int argc, ShellValue *args) {
+	if (argc < 1) return newNumVal(-1);
+	char buffi[2];
+	buffi[0] = (char)args[0].as.num;
+	buffi[1] = '\0';
+	return newStrVal(buffi);
+}
+
+ShellValue native_ord(int argc, ShellValue *args) {
+	if (argc < 1) return newNumVal(-1);
+	char ch = args[0].as.str[0]; // pillamos el primer caractér
+	return newNumVal((double)ch);
+}
+
 ShellValue native_float(int argc, ShellValue *args) {
 	if (argc < 1) return newNumVal(-1);
 	return newNumVal(atof(args[0].as.str));
@@ -362,4 +376,6 @@ void register_globals(EvalCtx *ctx) {
 	register_cfunc(ctx, "arg", native_args);
 	register_cfunc(ctx, "float", native_float);
 	register_cfunc(ctx, "str", native_str);
+	register_cfunc(ctx, "chr", native_chr);
+	register_cfunc(ctx, "ord", native_ord);
 }

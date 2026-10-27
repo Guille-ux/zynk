@@ -1,5 +1,9 @@
 ## 🕒 Funciones de Sistema y Utilidades
 
+### `chr(number)`: Devuelve un string formado por por el código ascii de caractér
+
+### `ord(character)`: Devuelve el código ascii del primer caractér de una cadena
+
 ### `arg(n)`
 * **Descripción:** Devuelve el argumento n de los que recibio el programa (note que el primero es el número de argumentos).
 
