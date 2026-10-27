@@ -31,8 +31,10 @@ else
 	TARGET = $(BUILD)/zynk
 endif
 
-all: $(TARGET)
+all: folders $(TARGET)
 lib: $(TARGET_LIB)
+folders:
+	mkdir -p build
 
 
 $(TARGET): $(OBJS) $(MAIN_OBJ)
