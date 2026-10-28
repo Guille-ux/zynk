@@ -57,7 +57,7 @@ static inline uint64_t getVAL(ZynkVM *vm) {
 	return getQOP(vm) | getQOP(vm) << 64;
 }
 
-static vpid printVal(ShellValue val) {
+static void printVal(ShellValue val) {
 	if (val.type == VAL_NUMBER) {
 		kprintf("%f\n", val.as.num);
 	} else if (val.type == VAL_STRING) {

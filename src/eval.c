@@ -730,7 +730,7 @@ static int evalAssignment(ASTNode *stmt, EvalCtx *ctx) {
 	return EVAL_OK;
 }
 
-static bool isTruly(ShellValue val) {
+bool isTruly(ShellValue val) {
 	if (val.type == VAL_NUMBER) {
 		return (val.as.num != 0);
 	} else if (val.type == VAL_STRING) {

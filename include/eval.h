@@ -199,5 +199,6 @@ ShellValue ref_add(ShellValue val);
 void ref_del(ShellValue val);
 ShellValue evalExpr(ASTNode *expr, EvalCtx *ctx);
 int eval(ASTNode *ast, EvalCtx *ctx);
+bool isTruly(ShellValue val);
 
 #endif
