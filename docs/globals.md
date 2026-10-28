@@ -1,5 +1,11 @@
 ## 🕒 Funciones de Sistema y Utilidades
 
+### `newb(size)`: Devuelve un nuevo objeto no estándar, o tmb conocido como chunk de bytes
+
+### `setb(obj position value)`: pone un valor específico en un offset de un objeto no estándar específico
+
+### `getb(obj position)`: Obtiene un valor de un objeto no estándar específico de un offset específico
+
 ### `chr(number)`: Devuelve un string formado por por el código ascii de caractér
 
 ### `ord(character)`: Devuelve el código ascii del primer caractér de una cadena

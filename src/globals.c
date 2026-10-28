@@ -7,6 +7,46 @@
 #include "../include/parser.h"
 #include <stdlib.h>
 
+ShellValue native_newb(int argc, ShellValue *args) {
+	if (argc < 1) return newNumVal(-1);
+	return newObjVal((size_t)args[0].as.num);
+}
+
+ShellValue native_setb(int argc, ShellValue *args) {
+	if (argc < 3) return newNumVal(-1);
+	Object *obj = args[0].as.obj;
+	size_t pos = (size_t)args[1].as.num;
+	uint8_t new_val = (uint8_t)args[2].as.num;
+	obj->info[pos] = new_val; // yay
+	return newNumVal(0);
+}
+
+ShellValue native_getb(int argc, ShellValue *args) {
+	if (argc < 2) return newNumVal(-1);
+	Object *obj = args[0].as.obj;
+	size_t pos = (size_t)args[1].as.num;
+	// yippppppieeeee, idk
+	return newNumVal((double)obj->info[pos]);
+}
+/*
+ *
+ * This functions will come soon, yk, i think they would be useful
+ * idk
+ *
+ *
+ShellValue native_text2b(int argc, ShellValue *args) {
+	if (argc < 1) return newNumVal(-1);
+	ShellValue val = newObjVal(strlen(args[0].as.str));
+
+}
+
+ShellValue native_b2text(int argc, ShellValue *args) {
+	if (argc < 1) return newNumVal(-1);
+	if (args[0].type!=VAL_OBJ) return newNumVal(-1);
+	Object *obj = 
+	return newStrVal();
+}
+*/
 ShellValue native_chr(int argc, ShellValue *args) {
 	if (argc < 1) return newNumVal(-1);
 	char buffi[2];
@@ -378,4 +418,7 @@ void register_globals(EvalCtx *ctx) {
 	register_cfunc(ctx, "str", native_str);
 	register_cfunc(ctx, "chr", native_chr);
 	register_cfunc(ctx, "ord", native_ord);
+	register_cfunc(ctx, "newb", native_newb);
+	register_cfunc(ctx, "setb", native_setb);
+	register_cfunc(ctx, "getb", native_getb);
 }
