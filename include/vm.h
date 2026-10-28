@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include "eval.h"
+#include "chunk.h"
 
 #define STACK_SIZE 256
 
@@ -55,12 +56,14 @@ typedef enum {
 	OP_XOR,
 	OP_AND,
 	OP_ECHO,
+	OP_GET_ARG,
 } OP;
 
 void initVM(ZynkVM *vm);
 void freeVM(ZynkVM *vm);
 ShellValue stackPop(ZynkVM *vm);
-void stackPush(ShellValue val, ZynkVM *vm);
+void stackPush(ZynkVM *vm, ShellValue val);
 InterpretResult run(ZynkVM *vm);
+void loadChunk(ZynkVM *vm, Chunk *chunk);
 
 #endif

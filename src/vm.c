@@ -31,7 +31,7 @@ ShellValue stackPop(ZynkVM *vm) {
 	return vm->stack[vm->sp--];
 }
 
-void stackPush(ShellValue val, ZynkVM *vm) {
+void stackPush(ZynkVM *vm, ShellValue val) {
 	if (vm->sp>=STACK_SIZE) {
 		vm->exit_now = true;
 		vm->exit_code = ZYNK_ERR;
@@ -57,37 +57,98 @@ static inline uint64_t getVAL(ZynkVM *vm) {
 	return getQOP(vm) | getQOP(vm) << 64;
 }
 
+static vpid printVal(ShellValue val) {
+	if (val.type == VAL_NUMBER) {
+		kprintf("%f\n", val.as.num);
+	} else if (val.type == VAL_STRING) {
+		kprintf("%s\n", (const char *)val.as.str);
+	} else if (val.type == VAL_DICT) {
+		InstanceObj *inst = (InstanceObj*)((size_t)val.as.comodin - sizeof(GCObj));
+		EvalCtx *rctx = inst->ctx;	
+		for (int i=0;i<rctx->var_cap;i++) {
+			if (rctx->var_table[i].name==NULL) continue;
+			printf("Name: %s -> ", rctx->var_table[i].name);
+			if (rctx->var_table[i].val.type==VAL_STRING) {
+				printf("%s\n", rctx->var_table[i].val.as.str);
+			} else if (rctx->var_table[i].val.type==VAL_NUMBER){
+				printf("%lf\n", rctx->var_table[i].val.as.num);
+			}
+		}
+	} else {
+		kprintf("Err -> Unknown type\n");
+	}
+}
+
 InterpretResult run(ZynkVM *vm) {
 	uint8_t op = getOP(vm);
 	while (1) {
-		uint64_t arg
+		uint64_t arg;
 		ShellValue a;
 		ShellValue b;
+		EvalCtx *eval_idk;
 		switch (op) {
 			case OP_HALT:
 				vm->exit_now = true;
 				break;
 			case OP_LOAD_CONSTANT:
-				stackPush(vm->constants[getOP(vm)], vm);
+				stackPush(vm, vm->constants[getOP(vm)]);
 				break;
 			case OP_LOAD_W_CONSTANT:
-				stackPush(vm->constants[getWOP(vm)], vm);
+				stackPush(vm, vm->constants[getWOP(vm)]);
 				break;
 			case OP_ADD:
-				a = stackPop(vm);
 				b = stackPop(vm);
+				a = stackPop(vm);
+				if (a.type==VAL_STRING||b.type==VAL_STRING) {
+					char *left;
+					char *right;
+					char num_buff[512];
+					if (a.type==b.type) {
+						left = a.as.str;
+						right = b.as.str;
+					} else if (a.type==VAL_NUMBER) {
+						right = b.as.str;
+						snprintf(num_buff, 512, "%lf", a.as.num);
+						left = num_buff;
+					} else if (b.type==VAL_NUMBER) {
+						left = a.as.str;
+						snprintf(num_buff, 512, "%lf", b.as.num);
+						right = num_buff;
+					}
+				} else if (a.type==VAL_NUMBER && b.type==VAL_NUMBER) {
+					stackPush(vm, newNumVal(a.as.num+b.as.num));
+				}	
 				break;
 			case OP_MUL:
-				a = stackPop(vm);
 				b = stackPop(vm);
+				a = stackPop(vm);
+				if (a.type!=VAL_NUMBER || b.type!=VAL_NUMBER) {
+					printf("Err -> Expected Numbers");
+					break;
+				}
+				stackPush(vm, newNumVal(a.as.num*b.as.num));		
 				break;
 			case OP_SUB:
-				a = stackPop(vm);
 				b = stackPop(vm);
+				a = stackPop(vm);
+				if (a.type!=VAL_NUMBER || b.type!=VAL_NUMBER) {
+					printf("Err -> Expected Numbers");
+					break;
+				}
+				stackPush(vm, newNumVal(a.as.num-b.as.num));
 				break;
 			case OP_DIV:
-				a = stackPop(vm);
 				b = stackPop(vm);
+				if (b.as.num==0) {
+					printf("Err -> Division By Zero\n");
+					break; // uf nos salvamos del
+					       // division by zero
+					       // luego vemos si
+					       // merece la pena sacarlo
+					       // qn sabe
+				}
+				a = stackPop(vm);
+				stackPush(vm, newNumVal(a.as.num/b.as.num));
 				break;
 			case OP_PUSH:
 				break;
@@ -103,40 +164,190 @@ InterpretResult run(ZynkVM *vm) {
 				break;
 			case OP_SET:
 				break;
+			case OP_GET_ARG:
+				break;
 			case OP_GET:
 				break;
 			case OP_DEL:
-				delShellVarEntry(vm->ctx, stackPop(vm).as.name);
+				delShellVarEntry(vm->ctx, stackPop(vm).as.str);
 				break;
 			case OP_RET:
+				// yeah does nothing, well, returns
+				// TODO: add code for returns, ahhhh, yeah
+				a = stackPop(vm);
+				b = stackPop(vm);
+				arg = (uint64_t)b.as.num;
+				stackPush(vm, a);
+				// no se q cosa de volver, ahhhh
+				// esto de aqui creo
+				vm->ip = (size_t)(arg); // NICE, SALTO
+				eval_idk = vm->ctx;
+				vm->ctx = vm->ctx->parent; // jeje
+							   // CLOSURES
+				midKillShellCtx(eval_idk);
 				break;
 			case OP_EQ:
+				b = stackPop(vm);
+				a = stackPop(vm);
+				if (a.type!=b.type) {
+					stackPush(vm, newNumVal(0));
+				} else {
+					if (a.type==VAL_NUMBER) {
+						if (a.as.num==b.as.num) {
+							stackPush(vm, newNumVal(1));
+						} else {
+							stackPush(vm, newNumVal(0));
+						}
+					} else if (a.type==VAL_STRING) {
+						if (strcmp(a.as.str, b.as.str)==0) {
+							stackPush(vm, newNumVal(1));
+						} else {
+							stackPush(vm, newNumVal(0));
+						}
+					} else {
+						if (a.as.comodin==b.as.comodin) {
+							stackPush(vm, newNumVal(1));
+						} else {
+							stackPush(vm, newNumVal(0));
+						}
+					}
+				}
 				break;
 			case OP_NEQ:
+				b = stackPop(vm);
+				a = stackPop(vm);
+				if (a.type!=b.type) {
+					stackPush(vm, newNumVal(1));
+				} else {
+					if (a.type==VAL_NUMBER) {
+						if (a.as.num==b.as.num) {
+							stackPush(vm, newNumVal(0));
+						} else {
+							stackPush(vm, newNumVal(1));
+						}
+					} else if (a.type==VAL_STRING) {
+						if (strcmp(a.as.str, b.as.str)==0) {
+							stackPush(vm, newNumVal(0));
+						} else {
+							stackPush(vm, newNumVal(1));
+						}
+					} else {
+						if (a.as.comodin==b.as.comodin) {
+							stackPush(vm, newNumVal(0));
+						} else {
+							stackPush(vm, newNumVal(1));
+						}
+					}
+				}
 				break;
 			case OP_GT:
+				b = stackPop(vm);
+				a = stackPop(vm);
+				if (a.type!=b.type) {
+					stackPush(vm, newNumVal(0));
+				} else  if (a.type!=VAL_NUMBER) {
+					stackPush(vm, newNumVal(0));
+				} else {
+					if (a.as.num > b.as.num) {
+						stackPush(vm, newNumVal(1));
+					} else {
+						stackPush(vm, newNumVal(0));
+					}
+				}
 				break;
 			case OP_LT:
+				b = stackPop(vm);
+				a = stackPop(vm);
+				if (a.type!=b.type) {
+					stackPush(vm, newNumVal(0));
+				} else  if (a.type!=VAL_NUMBER) {
+					stackPush(vm, newNumVal(0));
+				} else {
+					if (a.as.num < b.as.num) {
+						stackPush(vm, newNumVal(1));
+					} else {
+						stackPush(vm, newNumVal(0));
+					}
+				}
 				break;
 			case OP_LEQ:
+				b = stackPop(vm);
+				a = stackPop(vm);
+				if (a.type!=b.type) {
+					stackPush(vm, newNumVal(0));
+				} else  if (a.type!=VAL_NUMBER) {
+					stackPush(vm, newNumVal(0));
+				} else {
+					if (a.as.num <= b.as.num) {
+						stackPush(vm, newNumVal(1));
+					} else {
+						stackPush(vm, newNumVal(0));
+					}
+				}
 				break;
 			case OP_GEQ:
+				b = stackPop(vm);
+				a = stackPop(vm);
+				if (a.type!=b.type) {
+					stackPush(vm, newNumVal(0));
+				} else  if (a.type!=VAL_NUMBER) {
+					stackPush(vm, newNumVal(0));
+				} else {
+					if (a.as.num >= b.as.num) {
+						stackPush(vm, newNumVal(1));
+					} else {
+						stackPush(vm, newNumVal(0));
+					}
+				}
 				break;
 			case OP_JUMP_F:
 				break;
 			case OP_NOT:
+				if (isTruly(stackPop(vm))) {
+					stackPush(vm, newNumVal(1));
+				} else {
+					stackPush(vm, newNumVal(0));
+				}
 				break;
 			case OP_OR:
+				b = stackPop(vm);
+				a = stackPop(vm);
+				if (isTruly(a) || isTruly(b)) {
+					stackPush(vm, newNumVal(1));
+				} else {
+					stackPush(vm, newNumVal(0));
+				}
 				break;
 			case OP_XOR:
+				b = stackPop(vm);
+				a = stackPop(vm);
+				if (isTruly(a) != isTruly(b)) {
+					stackPush(vm, newNumVal(1));
+				} else {
+					stackPush(vm, newNumVal(0));
+				}
 				break;
 			case OP_AND:
+				b = stackPop(vm);
+				a = stackPop(vm);
+				if (isTruly(a) && isTruly(b)) {
+					stackPush(vm, newNumVal(1));
+				} else {
+					stackPush(vm, newNumVal(0));
+				}
 				break;
 			case OP_ECHO:
+				printVal(stackPop(vm));
 				break;
 		}
 		if (vm->exit_now) break;
 		op = getOP(vm);
 	}
 	return vm->exit_code;
+}
+
+void loadChunk(ZynkVM *vm, Chunk *chunk) {
+	vm->code = chunk->code;
+	vm->n_cons = chunk->constants_count;
+	vm->constants = chunk->constants;
 }

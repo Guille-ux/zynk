@@ -12,7 +12,7 @@ TARGET_LIB = lib/mylib.so
 LIB_SRC = lib/mylib.c
 MAIN_OBJ = $(BUILD)/zynk.o
 TARGET = $(BUILD)/zynk
-OBJS = $(BUILD)/mbtype.o $(BUILD)/parser.o $(BUILD)/lexer.o $(BUILD)/eval.o $(BUILD)/globals.o 
+OBJS = $(BUILD)/mbtype.o $(BUILD)/parser.o $(BUILD)/lexer.o $(BUILD)/eval.o $(BUILD)/globals.o $(BUILD)/chunk.o $(BUILD)/vm.o
 ifeq ($(OS),windows)
 	CC = x86_64-w64-mingw32-gcc
 	CFLAGS = -D_WIN32 -Wall -Wextra -c $(EXTRA) -O3
@@ -42,6 +42,13 @@ $(TARGET): $(OBJS) $(MAIN_OBJ)
 # Regla para compilar el plugin dinámico a .so
 $(TARGET_LIB): $(LIB_SRC)
 	$(CC) -shared -fPIC -Wall -Wextra $(EXTRA) -o $@ $(LIB_SRC)
+
+
+$(BUILD)/vm.o: $(SRC)/vm.c
+	$(CC) $(CFLAGS) -o $(BUILD)/vm.o $(SRC)/vm.c
+
+$(BUILD)/chunk.o: $(SRC)/chunk.c
+	$(CC) $(CFLAGS) -o $(BUILD)/chunk.o $(SRC)/chunk.c
 
 $(BUILD)/globals.o: $(SRC)/globals.c
 	$(CC) $(CFLAGS) -o $(BUILD)/globals.o $(SRC)/globals.c
