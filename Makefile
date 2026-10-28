@@ -12,8 +12,7 @@ TARGET_LIB = lib/mylib.so
 LIB_SRC = lib/mylib.c
 MAIN_OBJ = $(BUILD)/zynk.o
 TARGET = $(BUILD)/zynk
-OBJS = $(BUILD)/mbtype.o $(BUILD)/parser.o $(BUILD)/lexer.o $(BUILD)/eval.o $(BUILD)/globals.o
-
+OBJS = $(BUILD)/mbtype.o $(BUILD)/parser.o $(BUILD)/lexer.o $(BUILD)/eval.o $(BUILD)/globals.o 
 ifeq ($(OS),windows)
 	CC = x86_64-w64-mingw32-gcc
 	CFLAGS = -D_WIN32 -Wall -Wextra -c $(EXTRA) -O3

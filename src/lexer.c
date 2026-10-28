@@ -110,7 +110,7 @@ Token lexer_next_token() {
 		if (pattern(">=")) return newToken(TOKEN_GEQ, ">=", 2);
 		if (pattern("!=")) return newToken(TOKEN_BEQ, "!=", 2);
 		switch (c) {
-			case '\t': advance();
+			//case '\r': advance();
 			case '\n': advance(); return newToken(TOKEN_NEW_LINE, "\n", 1);
 			case '*': advance(); return newToken(TOKEN_MUL, "*", 1);
 			case '/': advance(); return newToken(TOKEN_DIV, "/", 1);

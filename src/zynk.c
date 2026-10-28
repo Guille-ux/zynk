@@ -8,6 +8,7 @@
 
 
 int main(int argc, char *argv[]) {
+	//initArena();
 	if (argc < 2) {
 		printf("Use: %s <filename>\n", argv[0]);
 		return 1;
@@ -26,7 +27,7 @@ int main(int argc, char *argv[]) {
 
 
 	if (archivo == NULL) {
-		perror("Error al abrir el archivo");
+		perror("Error while reading the file!");
 		return 1;
 	}
 
@@ -61,5 +62,6 @@ int main(int argc, char *argv[]) {
 	free(buffer);
 	fclose(archivo);
 	cleanAll();
+	//afree();
 	return 0;
 }

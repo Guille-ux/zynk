@@ -13,8 +13,11 @@
 #include "../include/lexer.h"
 #include "../include/mbtype.h"
 
+
 static Token *tokens;
 static size_t token_index;
+
+#define k(idk) (kfree(idk))
 
 static ASTNode *parse_fn_call();
 static ASTNode *parse_fn_def();
@@ -82,7 +85,7 @@ static ASTNode *parse_program() {
 	program_data->stmts=(ASTNode **)kmalloc(cap*sizeof(ASTNode*));
 
 	if (!program_data->stmts) {
-		kfree(programNode);
+		k(programNode);
 		return NULL;
 	}
 
@@ -103,13 +106,13 @@ static ASTNode *parse_program() {
 			cap *= 2;
 			ASTNode **new_stmts=(ASTNode**)kmalloc(cap*sizeof(ASTNode*));
 			if (!new_stmts) {
-				kfree(programNode->data.program.stmts);
-				kfree(programNode);
+				k(programNode->data.program.stmts);
+				k(programNode);
 			}
 
 			memcpy(new_stmts, program_data->stmts, program_data->size * sizeof(ASTNode*));
 
-			kfree(program_data->stmts);
+			k(program_data->stmts);
 			program_data->stmts = new_stmts;
 		}
 
@@ -160,7 +163,7 @@ static ASTNode *parse_identifier() {
         eat(); 
         ASTNode *expr = parse_expression();
         if (expr == NULL) {
-            kfree(name);
+            k(name);
             parser_free_ast(member);
             return NULL;
         }
@@ -175,7 +178,7 @@ static ASTNode *parse_identifier() {
     if (peek()->type == TOKEN_LPAREN) {
         ASTNode *node = parse_fn_call();
         if (node == NULL) {
-            kfree(name);
+            k(name);
             parser_free_ast(member);
             return NULL;
         }
@@ -257,27 +260,27 @@ ASTNode *parse() {
 
 void parser_free_ast(ASTNode *node) {
 	if (node==NULL) return;
-
+	// vuelve a ser neceasrio, qn lo diria?  return; // ya no debería de ser necesario verdad?
 	switch (node->type) {
 		case NODE_PROGRAM: {
 					for (size_t i=0;i<node->data.program.size;i++) {
 						parser_free_ast(node->data.program.stmts[i]);
 					}
-					kfree(node->data.program.stmts);
+					k(node->data.program.stmts);
 					break;
 				   }
 		case NODE_ASSIGNMENT: {
-					kfree(node->data.assignment.var_name);
+					k(node->data.assignment.var_name);
 					parser_free_ast(node->data.assignment.expr);
 					parser_free_ast(node->data.assignment.member);
 					break;
 				      }
 		case NODE_COMMAND_CALL: {
-					kfree(node->data.command_call.name);
+					k(node->data.command_call.name);
 					for (size_t i=0;i<node->data.command_call.argc;i++) {
 						parser_free_ast(node->data.command_call.args[i]);
 					}
-					kfree(node->data.command_call.args);
+					k(node->data.command_call.args);
 					break;
 					}
 		case NODE_VAR_REF: {
@@ -285,7 +288,7 @@ void parser_free_ast(ASTNode *node) {
 					break;
 				   }
 		case NODE_STRING_LIT: {
-					kfree(node->data.string_lit);
+					k(node->data.string_lit);
 					break;
 				      }
 		case NODE_BINARY_EXPR: {
@@ -302,11 +305,11 @@ void parser_free_ast(ASTNode *node) {
 					for (size_t i = 0; i < node->data.if_stmt.s_then; i++) {
 						parser_free_ast(node->data.if_stmt.thenb[i]);
 					}
-					kfree(node->data.if_stmt.thenb);
+					k(node->data.if_stmt.thenb);
 					for (size_t i = 0; i < node->data.if_stmt.s_else; i++) {
 						parser_free_ast(node->data.if_stmt.elseb[i]);
 					}
-					kfree(node->data.if_stmt.elseb);
+					k(node->data.if_stmt.elseb);
 					break;
 				}
 		case NODE_WHILE_LOOP: {
@@ -314,7 +317,7 @@ void parser_free_ast(ASTNode *node) {
 					for (size_t i=0;i<node->data.while_loop.s_body; i++) {
 						parser_free_ast(node->data.while_loop.body[i]);
 					}
-					kfree(node->data.while_loop.body);
+					k(node->data.while_loop.body);
 					break;
 				      }
 		case NODE_FOR_LOOP: {
@@ -325,7 +328,7 @@ void parser_free_ast(ASTNode *node) {
 					for (size_t i=0;i<node->data.for_loop.s_body;i++) {
 						parser_free_ast(node->data.for_loop.body[i]);
 					}
-					kfree(node->data.for_loop.body);
+					k(node->data.for_loop.body);
 					break;
 				    }
 		case NODE_ECHO: {
@@ -351,7 +354,7 @@ void parser_free_ast(ASTNode *node) {
 			for (int i=0;i<node->data.fn_call.argc;i++) {
 				parser_free_ast(node->data.fn_call.args[i]);
 			}
-			kfree(node->data.fn_call.args);
+			k(node->data.fn_call.args);
 			break;
 		case VAR_DEF: {
 
@@ -372,7 +375,7 @@ void parser_free_ast(ASTNode *node) {
 			break;
 		default: break;
 	}
-	kfree(node);
+	k(node);
 }
 
 static ASTNode *parse_primary_expr() {
@@ -739,7 +742,7 @@ static ASTNode **parse_expression_list(size_t *argc) {
 			for (size_t i = 0;i<size;i++) {
 				parser_free_ast(list[i]);
 			}
-			kfree(list);
+			k(list);
 			*argc = 0;
 			return NULL;
 		}
@@ -754,12 +757,12 @@ static ASTNode **parse_expression_list(size_t *argc) {
 					parser_free_ast(list[i]);
 				}
 				*argc = 0;
-				kfree(list);
+				k(list);
 				return NULL;
 			}
 			memcpy((void*)new_list, (const void*)list, size * sizeof(ASTNode *));
 		
-			kfree(list);
+			k(list);
 			list = new_list;
 		}
 
@@ -781,7 +784,7 @@ static ASTNode *parse_echo() {
 	//lexer_free_token(echo_k);
 	ASTNode *expr = parse_expression();
 	if (expr == NULL) {
-		kfree(new_node);
+		k(new_node);
 		return NULL;
 	}
 	new_node->data.echo_stmt.expr = expr;
@@ -805,7 +808,7 @@ static ASTNode *parse_return() {
 
 		ASTNode *expr = parse_expression();
 		if (expr==NULL) {
-			kfree(new_node);
+			k(new_node);
 			return NULL;
 		}
 		new_node->data.ret_stmt.expr=expr;
@@ -855,7 +858,7 @@ static ASTNode **parse_statement_list(size_t *out_s, LTokenType *stop_tokens, si
 			for (size_t i=0;i<size;i++) {
 				parser_free_ast(stmt_list[i]);
 			}
-			kfree(stmt_list);
+			k(stmt_list);
 			*out_s = 0;
 			return NULL;
 		}
@@ -879,7 +882,9 @@ static ASTNode **parse_statement_list(size_t *out_s, LTokenType *stop_tokens, si
 			stmt_list = new_stmt_list;
 		}
 		stmt_list[size++]=stmt;
-	}	
+	}
+	ASTNode *new_stmt_list = (ASTNode*)kmalloc(size);
+	memcpy((void*)new_stmt_list, (const void*)stmt_list, size*sizeof(ASTNode*));
 	*out_s = size;	
 	return stmt_list;
 }
@@ -895,7 +900,7 @@ static ASTNode *parse_if() {
 	
 	new_node->data.if_stmt.condition = parse_expression();
 	if (!new_node->data.if_stmt.condition) {
-		kfree(new_node);
+		k(new_node);
 		return NULL;
 	}
 	while (peek()->type == TOKEN_NEW_LINE) {
@@ -961,7 +966,7 @@ static ASTNode *parse_while() {
 
 	if (!match(TOKEN_LBRACE)) {
 		kprintf("Err -> Expected '{' after 'do'\n");
-		kfree(new_node);
+		k(new_node);
 		return NULL;
 	}
 
@@ -1006,13 +1011,13 @@ static ASTNode *parse_for() {
 
 	if (!match(TOKEN_LPAREN)) {
 		kprintf("Err -> Expected '(' after 'for'\n");
-		kfree(new_node);
+		k(new_node);
 		return NULL;
 	}
 	if (peek()->type != TOKEN_SEMICOLON) {
 		new_node->data.for_loop.init = parse_statement();
 		if (new_node->data.for_loop.init == NULL) {
-			kfree(new_node);
+			k(new_node);
 			return NULL;
 		}
 	} else {

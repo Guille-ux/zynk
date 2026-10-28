@@ -1,0 +1,15 @@
+let start = clock()
+
+fn fib {
+	let n = $0
+	if n <= 1 then
+		return n
+	fi
+	return fib(n-1) + fib(n-2)
+}
+
+fib(35)
+
+let end = clock()
+
+echo "Time: " + (end - start)
