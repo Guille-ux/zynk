@@ -9,13 +9,13 @@
 
 int main(int argc, char *argv[]) {
 	if (argc < 2) {
-		printf("Uso: %s <nombre_del_archivo>\n", argv[0]);
+		printf("Use: %s <filename>\n", argv[0]);
 		return 1;
 	}
 	EvalCtx *global = newShellCtx();
-	
+
 	set_global(global);
-	
+
 	register_globals(global);
 	addShellArg(global, newNumVal((double)argc));
 	for (int i=0;i<argc;i++) {
