@@ -4,6 +4,11 @@
 
 #include <stdlib.h>
 
+ZynkVM vm;
+Chunk chk;
+
+
+
 void initVM(ZynkVM *vm) {
 	vm->exit_code = ZYNK_OK;
 	vm->code = NULL;
@@ -24,6 +29,21 @@ void freeVM(ZynkVM *vm) {
 	free(vm->constants);
 	free(vm->code);
 	free(vm);
+}
+
+CallVal callPop(ZynkVM *vm) {
+	if (vm->cp==0) return (CallVal){.caller=0, .caller_ctx=NULL}; // esto no debería pasar
+	return vm->call_stack[vm->cp--];
+}
+
+void callPush(ZynkVM *vm, CallVal val) {
+	if (vm->cp>=CALL_STACK_SIZE) {
+		vm->exit_now = true;
+		vm->exit_code = ZYNK_ERR;
+		printf("Err -> Max Recursion Limit Exceed!\n");
+		return;
+	}
+	vm->call_stack[vm->cp++] = val;
 }
 
 ShellValue stackPop(ZynkVM *vm) {
@@ -85,7 +105,11 @@ InterpretResult run(ZynkVM *vm) {
 		uint64_t arg;
 		ShellValue a;
 		ShellValue b;
+		ShellValue c; // i didn't expect to use more than
+			      // 2 arguments idk
 		EvalCtx *eval_idk;
+		CallVal idk;
+		double d;
 		switch (op) {
 			case OP_HALT:
 				vm->exit_now = true;
@@ -151,38 +175,96 @@ InterpretResult run(ZynkVM *vm) {
 				stackPush(vm, newNumVal(a.as.num/b.as.num));
 				break;
 			case OP_PUSH:
+				// yay, pushing vals into the thing
+				arg = getVal(vm);
+				memcpy(&d, &arg, sizeof(double));
+				stackPush(vm, newNumVal(d));
 				break;
 			case OP_POP:
+				// idk why i added this instruction
+				// ahh yes, pop to a variable
+				// first is the var
+				// second is the value
+				c = stackPop(vm); // value
+				b = stackPop(vm); // name
+				a = stackPop(vm); // closure
+
+				setShellVarEntry((EvalCtx*)a.as.comodin, b.as.str, c);
 				break;
 			case OP_JUMP:
+				arg = getVal(vm);
+				vm->ip = (size_t)arg; // YAYAYAYAYA
 				break;
 			case OP_JUMP_T:
+				a = stackPop(vm);
+				arg = getVal(vm);
+				if (isTruly(a)) {
+					vm->ip = (size_t)arg;
+				}
 				break;
 			case OP_CALL:
+				// yeah we push the data
+				// to be able to come back
+				// some time yk
+				a = stackPop(vm); // nargs
+				idk.caller = vm->ip;
+				idk.caller_ctx = vm->ctx;
+				callPush(idk);
+				EvalCtx *eval_idk = newShellCtx();
+				for (size_t i=0;i<(int)a.as.num;i++) {
+					// achus
+					b = stackPop(vm);
+					addShellArg(eval_idk, b);
+				}
+				a = stackPop(vm);
+				vm->ip = a.as.uint; // yk, the func
+				vm->ctx = eval_idk;
 				break;
-			case OP_GET_MEMBER_CLOSURE:
-				break;
-			case OP_SET:
-				break;
-			case OP_GET_ARG:
+			case OP_GET_CLOSURE:
+				arg = getVal(vm); // num of things idk
+				a.type = VAL_DICT;
+				a.as.comodin = vm->ctx; // yk, we start
+							// where we 
+							// are right now
+				for (int i=0;i<(int)arg;i++) {
+					b = stackPop(vm);
+					Var *base = getShellVarEntrySilent((EvalCtx*)a.as.comodin, b.as.str);
+					a = base->val;
+				}
+				stackPush(a);
 				break;
 			case OP_GET:
+				// tomamos del closure encontrado antes
+				// yk
+				b = stackPop(vm); // el nombre yk
+				a = stackPop(vm); // el closure
+				b = getShellVarEntry((EvalCtx*)a.as.comodin, b.as.str);
+				stackPush(vm, b); // now, time to push
+				break;
+			case OP_DEF:
+				c = stackPop(vm); // value
+				b = stackPop(vm); // name
+				a = stackPop(vm); // closure
+
+				defShellVarEntry((EvalCtx*)a.as.comodin, b.as.str, c);
+				break;
+			case OP_GET_ARG:
+				stackPush(getShellArg(vm->ctx, getVal(vm)));
 				break;
 			case OP_DEL:
-				delShellVarEntry(vm->ctx, stackPop(vm).as.str);
+				b = stackPop(vm); // name
+				a = stackPop(vm); // closure
+				delShellVarEntry((EvalCtx*)a.as.comodin, b.as.str);
 				break;
 			case OP_RET:
 				// yeah does nothing, well, returns
-				// TODO: add code for returns, ahhhh, yeah
-				a = stackPop(vm);
-				b = stackPop(vm);
-				arg = (uint64_t)b.as.num;
-				stackPush(vm, a);
+				idk = callPop(vm);
+				arg = (uint64_t)idk.caller;
 				// no se q cosa de volver, ahhhh
 				// esto de aqui creo
 				vm->ip = (size_t)(arg); // NICE, SALTO
 				eval_idk = vm->ctx;
-				vm->ctx = vm->ctx->parent; // jeje
+				vm->ctx = idk.caller_ctx; // jeje
 							   // CLOSURES
 				midKillShellCtx(eval_idk);
 				break;
@@ -301,6 +383,11 @@ InterpretResult run(ZynkVM *vm) {
 				}
 				break;
 			case OP_JUMP_F:
+				a = stackPop(vm);
+				arg = getVal(vm);
+				if (!isTruly(a)) {
+					vm->ip = (size_t)arg;
+				}
 				break;
 			case OP_NOT:
 				if (isTruly(stackPop(vm))) {

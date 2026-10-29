@@ -23,6 +23,7 @@ typedef enum {
 	VAL_DICT = 5, // las clases seran diccionarios JAJAJJAJAJAJJA
 	VAL_ARRAY = 6,
 	VAL_OBJ = 7, // objeto no estandar
+	VAL_UINT = 8,
 } ValType;
 
 struct ZFunc;
@@ -61,6 +62,7 @@ typedef struct {
 typedef struct ShellValue {
 	ValType type;
 	union {
+		size_t uint; // hehehehhe
 		double num;
 		char *str;
 		void *comodin;
@@ -115,7 +117,6 @@ typedef struct {
 typedef struct {
 	char *name;
 	ShellValue val;
-	bool is_exported;
 	bool is_set;
 } Var;
 
@@ -194,6 +195,7 @@ void setShellVarEntry(EvalCtx *ctx, char *name, ShellValue val);
 void defShellVarEntry(EvalCtx *ctx, char *name, ShellValue val);
 void delShellVarEntry(EvalCtx *ctx, char *name);
 uint32_t zhash(char *name); // aham, a futuro
+
 
 ShellValue ref_add(ShellValue val);
 void ref_del(ShellValue val);
