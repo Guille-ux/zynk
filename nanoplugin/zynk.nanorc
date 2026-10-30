@@ -19,3 +19,10 @@ color brightmagenta "\bclass[[:space:]]+[A-Za-z_][A-Za-z0-9_]*"
 
 # Comentarios
 color blue "#.*$"
+
+
+color brightblue "\b(fn)[[:space:]]+([A-Za-z_][A-Za-z0-9_]*)"
+
+color brightmagenta "\b(class)[[:space:]]+([A-Za-z_][A-Za-z0-9_]*)"
+
+color brightcyan "\b(let)[[:space:]]+([A-Za-z_][A-Za-z0-9_]*)"
