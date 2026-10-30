@@ -952,7 +952,9 @@ static ShellValue evalBinExpr(ASTNode *expr, EvalCtx *ctx) {
 					snprintf(num_buff, 512, "%lf", right.as.num);
 					right_str = num_buff;
 				}
-				char *concat = (char*)kmalloc(strlen(left_str)+strlen(right_str)+1);
+				size_t len1 = strlen(left_str);
+				size_t len2 = strlen(right_str);
+				char *concat = (char*)kmalloc(len1+len2+1);
 				if (concat==NULL) {
 					kprintf("[FATAL ERROR]\n");
 					return result;

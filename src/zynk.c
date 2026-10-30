@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
 		addShellArg(global, newStrVal(argv[i]));
 	}
 
-	FILE *archivo = fopen(argv[1], "r");
+	FILE *archivo = fopen(argv[1], "rb");
 
 
 	if (archivo == NULL) {
@@ -36,18 +36,26 @@ int main(int argc, char *argv[]) {
 	long size = ftell(archivo);
 	fseek(archivo, 0, SEEK_SET);  
 	
-	char *buffer = malloc(size);
+
+	char *buffer = malloc(size+1);
 
 	if (buffer==NULL) {
 		fclose(archivo);
 		return -1;
 	}
 	size_t read_ = fread(buffer, 1, size, archivo);
-	buffer[read_-1] = '\0';
+	buffer[read_] = '\0';
 	EvalCtx *global_env = newShellCtx();
 	global_env->command_handler = multimodule_handler;
+	
+	size_t offset = 0;
 
-	lexer_init(buffer);
+	if (read_ >= 3 && (buffer[0]==0xEF && buffer[1]==0xBB && buffer[2]==0xBF)) {
+		offset = 3;
+	}
+
+	char *real_buff = (char*)((size_t)buffer + offset);
+	lexer_init(real_buff);
 	Token *t_buff = lexe(NULL);
 
 	parser_init(t_buff);

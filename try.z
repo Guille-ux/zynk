@@ -37,10 +37,11 @@ Net:connect(socket ip port)
 Net:send(socket request)
 
 let text = "\n"
-let new
-let end
+let new = "\0"
+let end = 0
 do {
 	new = Net:recv(socket 1)
+	echo new
 	text = text + new
 	end = len(text)
 	#echo new
