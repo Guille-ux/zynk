@@ -372,6 +372,8 @@ ShellValue len(int argc, ShellValue *args) {
 	if (argc < 1) return newNumVal(0);
 	if (args[0].type==VAL_STRING) {
 		return newNumVal(strlen(args[0].as.str));
+	} else if (args[0].type==VAL_OBJ) {
+		return newNumVal((double)args[0].as.obj->capacity);
 	}
 	return newNumVal(0);
 }

@@ -10,7 +10,7 @@
 
 
 #define STACK_SIZE 256
-#define CALL_STACK_SIZE 4096
+#define CALL_STACK_SIZE 8192
 
 typedef enum {
 	ZYNK_OK,
@@ -67,6 +67,9 @@ typedef enum {
 	OP_AND,
 	OP_ECHO,
 	OP_GET_ARG,
+	OP_PSELF,
+	OP_PUSH_UINT,
+	OP_MAKE_FUNC,
 } OP;
 
 

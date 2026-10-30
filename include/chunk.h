@@ -17,6 +17,7 @@ typedef struct {
 
 void initChunk(Chunk *chunk);
 void writeChunk(Chunk *chunk, uint8_t byte);
+void writeChunkQ(Chunk* chunk, uint64_t val);
 int addConstant(Chunk *chunk, ShellValue value);
 
 #endif

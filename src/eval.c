@@ -93,6 +93,19 @@ void delObj(GCObj *obj) {
 	kfree(obj); // lo limpiamos, perfecto! NICE
 }
 
+ShellValue newVMFuncVal(size_t ip, EvalCtx *closure_ctx) {
+    ShellValue val;
+    val.type = VAL_FUNC;
+    ZFuncVMObj *func = (ZFuncVMObj*)kmalloc(sizeof(ZFuncVMObj));
+    memset(func, 0, sizeof(ZFuncVMObj));
+    func->ip = ip;
+    func->closure_ctx = closure_ctx;
+    func->data.refc = 0;
+    val.as.comodin = (void*)((size_t)func + sizeof(GCObj));
+    addObj((GCObj*)func);
+    return val;
+}
+
 void growArray(Array *array) {
 	ShellValue *new_items = kmalloc(array->capacity*2*sizeof(ShellValue));
 	memcpy(new_items, array->items, array->size);
@@ -419,7 +432,7 @@ void defShellVarEntry(EvalCtx *ctx, char *name, ShellValue val) {
 		ctx->var_table = new_table;	
 	}
 	ref_del(ctx->var_table[id].val);	
-	ctx->var_table[id] = (Var){.val=ref_add(val), .is_exported=false, .is_set=true};
+	ctx->var_table[id] = (Var){.val=ref_add(val), .is_set=true};
 	ctx->var_table[id].name = name;
 }
 
@@ -459,7 +472,7 @@ void setShellVarEntry(EvalCtx *ctx, char *name, ShellValue val) {
 		return;
 	}
 	ref_del(ctx->var_table[id].val);
-	ctx->var_table[id] = (Var){.val=ref_add(val), .is_exported=false, .is_set=true};
+	ctx->var_table[id] = (Var){.val=ref_add(val), .is_set=true};
 	ctx->var_table[id].name = name;
 }
 
@@ -498,7 +511,7 @@ void addShellArg(EvalCtx *ctx, ShellValue val) {
 return;
 	}
 	ref_add(val);
-	ctx->argv[ctx->arg_used++] = (Var){.val=val, .is_exported=false, .is_set=true};
+	ctx->argv[ctx->arg_used++] = (Var){.val=val, .is_set=true};
 }
 
 ShellValue getShellArg(EvalCtx *ctx, size_t id) {

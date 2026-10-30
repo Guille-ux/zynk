@@ -1,5 +1,6 @@
 let start = clock()
 
+
 fn fib {
 	let n = $0
 	if n <= 1 then
@@ -8,7 +9,9 @@ fn fib {
 	return fib(n-1) + fib(n-2)
 }
 
-fib(35)
+
+
+fib(32)
 
 let end = clock()
 

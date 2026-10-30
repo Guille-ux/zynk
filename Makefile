@@ -12,7 +12,7 @@ TARGET_LIB = lib/mylib.so
 LIB_SRC = lib/mylib.c
 MAIN_OBJ = $(BUILD)/zynk.o
 TARGET = $(BUILD)/zynk
-OBJS = $(BUILD)/mbtype.o $(BUILD)/parser.o $(BUILD)/lexer.o $(BUILD)/eval.o $(BUILD)/globals.o $(BUILD)/chunk.o $(BUILD)/vm.o
+OBJS = $(BUILD)/mbtype.o $(BUILD)/parser.o $(BUILD)/lexer.o $(BUILD)/eval.o $(BUILD)/globals.o $(BUILD)/chunk.o $(BUILD)/vm.o $(BUILD)/compiler.o
 ifeq ($(OS),windows)
 	CC = x86_64-w64-mingw32-gcc
 	CFLAGS = -D_WIN32 -Wall -Wextra -c $(EXTRA) -O3
@@ -43,6 +43,8 @@ $(TARGET): $(OBJS) $(MAIN_OBJ)
 $(TARGET_LIB): $(LIB_SRC)
 	$(CC) -shared -fPIC -Wall -Wextra $(EXTRA) -o $@ $(LIB_SRC)
 
+$(BUILD)/compiler.o: $(SRC)/compiler.c
+	$(CC) $(CFLAGS) -o $(BUILD)/compiler.o $(SRC)/compiler.c
 
 $(BUILD)/vm.o: $(SRC)/vm.c
 	$(CC) $(CFLAGS) -o $(BUILD)/vm.o $(SRC)/vm.c

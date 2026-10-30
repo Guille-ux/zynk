@@ -5,7 +5,8 @@
 #include "../include/lexer.h"
 #include "../include/modules.h"
 #include "../include/globals.h"
-
+#include "../include/compiler.h"
+#include "../include/vm.h"
 
 int main(int argc, char *argv[]) {
 	//initArena();
@@ -52,8 +53,17 @@ int main(int argc, char *argv[]) {
 	parser_init(t_buff);
 	ASTNode *tree = parse();
 
+#ifndef BYTECODE_YET
 	eval(tree, global_env);
-
+#else 
+	compile(tree);
+	initVM(&vm);
+	loadChunk(&vm, &chk);
+	//disassembleChunk(&chk, "CHUNK");
+	run(&vm);
+	// idk
+	freeVM(&vm);
+#endif
 	parser_free_ast(tree);
 	lexer_free(t_buff);
 	free(t_buff);

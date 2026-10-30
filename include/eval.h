@@ -30,6 +30,7 @@ struct ZFunc;
 struct ShellValue;
 struct Object;
 struct CFunc;
+struct Func;
 
 typedef struct {
 	uint32_t refc;
@@ -59,6 +60,8 @@ typedef struct {
 	uint8_t info[];
 } RealObj;
 
+
+
 typedef struct ShellValue {
 	ValType type;
 	union {
@@ -71,7 +74,7 @@ typedef struct ShellValue {
 		struct Object *obj;
 		struct Array *arr;
 	} as;
-	uint32_t refc; // no se
+	//uint32_t refc; // no se
 } ShellValue;
 
 typedef ShellValue (*NativeFunc)(int argc, ShellValue *args);
@@ -134,9 +137,17 @@ typedef struct {
 } InstanceObj;
 
 
+typedef struct {
+    Obj data;
+    size_t ip;         
+    struct EvalCtx *closure_ctx; 
+} ZFuncVMObj;
 
+
+ShellValue newVMFuncVal(size_t ip, struct EvalCtx *closure_ctx);
 ShellValue newClassVal(struct EvalCtx *ctx, ASTNode *program);
 ShellValue newInstanceVal(struct EvalCtx *ctx);
+
 
 
 typedef struct EvalCtx {

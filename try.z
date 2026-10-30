@@ -1,3 +1,5 @@
+echo "Hola" + ", IDK"
+
 class Coche {
 	let marca = "Volkswagen"
 	let modelo = "Golf Plus"
@@ -12,8 +14,11 @@ class Coche {
 }
 
 let my=Coche()
+echo my
 my:info(my)
 my:crash()
+
+echo "hum!"
 
 let start = clock()
 
