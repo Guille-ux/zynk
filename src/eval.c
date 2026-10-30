@@ -71,7 +71,11 @@ void addObj(GCObj *obj) {
 	obj_pool->next = current;
 }
 
+bool lock=false; // para q es esto? para evitar q se dispare el gc
+		 // despues de eliminar referencias de lo q borra, yk
+
 void delObj(GCObj *obj) {
+	lock=true;
 	if (obj->last==NULL) {
 		obj_pool=obj->next;
 	} else {
@@ -87,10 +91,14 @@ void delObj(GCObj *obj) {
 		if (obj->capacity==0) {
 
 		} else {
+			for (int i=0;i<obj->size;i++) {
+				ref_del(obj->items[i]);
+			}
 			kfree(ptr);
 		}
 	}
 	kfree(obj); // lo limpiamos, perfecto! NICE
+	lock=false;
 }
 
 ShellValue newVMFuncVal(size_t ip, EvalCtx *closure_ctx) {
@@ -490,6 +498,7 @@ ShellValue ref_add(ShellValue val) {
 }
 
 void ref_del(ShellValue val) {
+	if (lock) return;
 	if (!isHeap(val.as.comodin)) return;
 	if (val.type==VAL_STRING ||
 	    val.type==VAL_FUNC ||
