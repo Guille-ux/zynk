@@ -1,5 +1,9 @@
 ## 🕒 Funciones de Sistema y Utilidades
 
+### `max(a b)`: Devuelve el valor más pequeño
+
+### `min(a b)`: Devuelve el valor más pequeño
+
 ### `newb(size)`: Devuelve un nuevo objeto no estándar, o tmb conocido como chunk de bytes
 
 ### `setb(obj position value)`: pone un valor específico en un offset de un objeto no estándar específico
@@ -161,7 +165,7 @@
 * `push(val)`: Añade un elemento al final del array dinámico.
 
 
-* `pop()`: Saca y devuelve el último elemento del array.
+* `pop()`: elimina el último elemento del array.
 
 
 * `len()`: Devuelve el tamaño actual de elementos almacenados.

@@ -7,6 +7,15 @@
 #include "../include/parser.h"
 #include <stdlib.h>
 
+ShellValue native_max(int argc, ShellValue *args) {
+	if (argc < 2) return newNumVal(-1);
+	return (args[0].as.num > args[1].as.num) ? args[0] : args[1];
+}
+ShellValue native_min(int argc, ShellValue *args) {
+	if (argc < 2) return newNumVal(-1);
+	return (args[0].as.num < args[1].as.num) ? args[0] : args[1];
+}
+
 ShellValue native_newb(int argc, ShellValue *args) {
 	if (argc < 1) return newNumVal(-1);
 	return newObjVal((size_t)args[0].as.num);
@@ -335,7 +344,7 @@ ShellValue native_array_pop(int argc, ShellValue *args) {
     Array *arr = val.as.arr;
     arr->size--;
     ref_del(arr->items[arr->size]);
-    return arr->items[arr->size];
+    return newNumVal(0);
 }
 
 ShellValue native_array_len(int argc, ShellValue *args) { 
@@ -423,4 +432,6 @@ void register_globals(EvalCtx *ctx) {
 	register_cfunc(ctx, "newb", native_newb);
 	register_cfunc(ctx, "setb", native_setb);
 	register_cfunc(ctx, "getb", native_getb);
+	register_cfunc(ctx, "max", native_max);
+	register_cfunc(ctx, "min", native_min);
 }

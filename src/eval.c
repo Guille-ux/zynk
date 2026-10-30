@@ -108,7 +108,7 @@ ShellValue newVMFuncVal(size_t ip, EvalCtx *closure_ctx) {
 
 void growArray(Array *array) {
 	ShellValue *new_items = kmalloc(array->capacity*2*sizeof(ShellValue));
-	memcpy(new_items, array->items, array->size);
+	memcpy(new_items, array->items, array->size*sizeof(ShellValue));
 	array->capacity *= 2;
 	kfree(array->items);
 	array->items = new_items;
@@ -368,7 +368,7 @@ Var *getShellVarEntry(EvalCtx *ctx, char *name) {
 		if (ctx->parent!=NULL) {
 			return getShellVarEntry(ctx->parent, name);
 		} else if (ctx->global!=NULL) return getShellVarEntry(ctx->global, name);
-		kprintf("Err -> Var not defined yet\n");
+		kprintf("Err -> Var not defined yet, %s\n", name);
 		return NULL;
 	}
 	return &ctx->var_table[id];
@@ -468,7 +468,7 @@ void setShellVarEntry(EvalCtx *ctx, char *name, ShellValue val) {
 			setShellVarEntry(ctx->parent, name, val);
 			return;
 		}
-		kprintf("Err -> Var isn't defined yet!\n");
+		kprintf("Err -> Var isn't defined yet! -> %s\n", name);
 		return;
 	}
 	ref_del(ctx->var_table[id].val);

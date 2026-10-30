@@ -6,6 +6,7 @@
 bool debug=false;
 static const char *source;
 static size_t current_pos;
+static size_t line;
 
 
 static char *m_strndup(const char *str, size_t n) {
@@ -35,7 +36,7 @@ static Token newToken(LTokenType type, const char *start, size_t len) {
 		return token;
 	} 
 	
-
+	token.line = line;
 	token.value=m_strndup(start, len);
 	if (debug==true) {
 		kprintf("New Token -> %s \n", (const char *)token.value);
@@ -46,6 +47,7 @@ static Token newToken(LTokenType type, const char *start, size_t len) {
 void lexer_init(const char *source_code) {
 	source=source_code;
 	current_pos=0;
+	line = 0;
 }
 
 void lexer_free_token(Token *token) {
@@ -111,7 +113,7 @@ Token lexer_next_token() {
 		if (pattern("!=")) return newToken(TOKEN_BEQ, "!=", 2);
 		switch (c) {
 			//case '\r': advance();
-			case '\n': advance(); return newToken(TOKEN_NEW_LINE, "\n", 1);
+			case '\n': advance(); line++; return newToken(TOKEN_NEW_LINE, "\n", 1);
 			case '*': advance(); return newToken(TOKEN_MUL, "*", 1);
 			case '/': advance(); return newToken(TOKEN_DIV, "/", 1);
 			case '-': advance(); return newToken(TOKEN_MINUS, "-", 1);

@@ -41,6 +41,16 @@ static ASTNode *parse_class_def();
 static ASTNode **parse_statement_list(size_t *out_s, LTokenType *stop_tokens, size_t n_stop_tokens);
 static ASTNode **parse_expression_list(size_t *argc);
 
+#define PERR(msg) do { \
+    Token *_curr = peek(); \
+    kprintf("Err [Line %d, Token %s] -> %s", _curr->line, _curr->value, msg); \
+} while(0)
+
+#define PERR_FMT(fmt, ...) do { \
+    Token *_curr = peek(); \
+    kprintf("Err [Line %d] -> " fmt "", _curr->line, __VA_ARGS__); \
+} while(0)
+
 static Token *peek() {
 	return &tokens[token_index];
 }
@@ -63,7 +73,7 @@ static bool match(LTokenType type) {
 static ASTNode *newASTNode(ASTNodeType type) {
 	ASTNode *node = (ASTNode *)kmalloc(sizeof(ASTNode));
 	if (node == NULL) {
-		kprintf("Err -> Out Of Memory!\n");
+		PERR("Err -> Out Of Memory!\n");
 		return NULL;
 	}
 	node->type=type;
@@ -133,7 +143,7 @@ static ASTNode *parse_member() {
 		eat();
 		expr = parse_expression();
 		if (eat()->type!=TOKEN_RBRACKET) {
-			kprintf("Err -> Expected Bracket\n");
+			PERR("Err -> Expected Bracket\n");
 		}
 	} else if (peek()->type==TOKEN_COLON) {
 		eat();
@@ -151,7 +161,7 @@ static ASTNode *parse_member() {
 static ASTNode *parse_identifier() {
     Token *current = eat(); // Nos comemos el TOKEN_IDENTIFIER
     if (current->type != TOKEN_IDENTIFIER) {
-        kprintf("Err -> Expected Identifier in parse_identifier\n");
+	PERR("Err -> Expected Identifier in parse_identifier\n");
         return NULL;
     }
 
@@ -243,8 +253,8 @@ static ASTNode *parse_statement() {
 
 
 	else {
-		kprintf("Err -> Unknown Statement!\n");
-		kprintf("Token -> %s\n", current->value);
+		PERR("Err -> Unknown Statement!\n");
+		PERR_FMT("Token -> %s\n", current->value);
 		return NULL;
 	}
 }
@@ -429,13 +439,13 @@ static ASTNode *parse_primary_expr() {
 			current = eat();
 			new_node = parse_expression();
 			if (!match(TOKEN_RPAREN)) {
-				kprintf("Err -> Expected ')'!\n");
+				PERR("Err -> Expected ')'!\n");
 				return NULL;
 			}	
 			break;
 				   }
 		default: {
-			kprintf("Err -> Unexpected Token!\n");
+			PERR("Err -> Unexpected Token!\n");
 			return NULL;
 			 }
 	}
@@ -447,12 +457,12 @@ static ASTNode *parse_class_def() {
 	eat();
 	ASTNode *new_node = newASTNode(CLASS_DEF);
 	Token *name = eat();
-	if (name->type!=TOKEN_IDENTIFIER) kprintf("Err -> expected Identifier\n");
+	if (name->type!=TOKEN_IDENTIFIER) PERR("Err -> expected Identifier\n");
 	//kprintf("%s\n", name->value);
-	if (eat()->type!=TOKEN_LBRACE) kprintf("Err -> '{' expected\n");
+	if (eat()->type!=TOKEN_LBRACE) PERR("Err -> '{' expected\n");
 	new_node->data.class_def.name = name->value;
 	new_node->data.class_def.program = parse_program();
-	if (eat()->type!=TOKEN_RBRACE) kprintf("Err -> '}' expected\n");
+	if (eat()->type!=TOKEN_RBRACE) PERR("Err -> '}' expected\n");
 	return new_node;
 }
 
@@ -460,12 +470,12 @@ static ASTNode *parse_fn_def() {
 	eat();
 	ASTNode *new_node = newASTNode(FUNCTION_DEF);
 	Token *name = eat();
-	if (name->type!=TOKEN_IDENTIFIER) kprintf("Err -> expected Identifier\n");
+	if (name->type!=TOKEN_IDENTIFIER) PERR("Err -> expected Identifier\n");
 	//kprintf("%s\n", name->value);
-	if (eat()->type!=TOKEN_LBRACE) kprintf("Err -> '{' expected\n");
+	if (eat()->type!=TOKEN_LBRACE) PERR("Err -> '{' expected\n");
 	new_node->data.fn_def.name = name->value;
 	new_node->data.fn_def.program = parse_program();
-	if (eat()->type!=TOKEN_RBRACE) kprintf("Err -> '}' expected\n");
+	if (eat()->type!=TOKEN_RBRACE) PERR("Err -> '}' expected\n");
 	return new_node;
 }
 
@@ -561,13 +571,13 @@ static ASTNode *parse_term() {
 
 		ASTNode *right_node=parse_factor();
 		if (right_node==NULL) {
-			kprintf("Err -> error parsing factor\n");
+			PERR("Err -> error parsing factor\n");
 			parser_free_ast(left_node);
 			return NULL;
 		}
 		ASTNode *binExpr = newASTNode(NODE_BINARY_EXPR);
 		if (binExpr == NULL) {
-			kprintf("Err -> Memory Error\n");
+			PERR("Err -> Memory Error\n");
 			parser_free_ast(left_node);
 			parser_free_ast(right_node);
 			return NULL;
@@ -655,20 +665,20 @@ static ASTNode *parse_assignment() {
 	Token *name = eat();
 	
 	if (name->type!=TOKEN_IDENTIFIER) {
-		kprintf("Err -> Expected Identifier\n");
+		PERR("Err -> Expected Identifier\n");
 		parser_free_ast(new_node);
 		return NULL;
 	}
 	new_node->data.assignment.member = parse_member();
 	new_node->data.assignment.var_name = strdup(name->value);
 	if (!match(TOKEN_ASSIGN)) {
-		kprintf("Err -> Expected '=' after identifier\n");
+		PERR("Err -> Expected '=' after identifier\n");
 		parser_free_ast(new_node);
 		return NULL;
 	}
 	ASTNode *expr_node = parse_expression();
 	if (expr_node==NULL) {
-		kprintf("Err -> error parsing expr\n");
+		PERR("Err -> error parsing expr\n");
 		parser_free_ast(expr_node);
 		parser_free_ast(new_node);
 		return NULL;
@@ -685,13 +695,13 @@ static ASTNode *parse_command_call() {
 
 	Token *cmd = eat();
 	if (cmd->type != TOKEN_IDENTIFIER) {
-		kprintf("Err -> Expected Identifier but found Token n. %d\n", (int)cmd->type);
+		PERR_FMT("Err -> Expected Identifier but found Token n. %d\n", (int)cmd->type);
 		parser_free_ast(new_node);
 		return NULL;
 	}
 	new_node->data.command_call.name = strdup(cmd->value);
 	if (new_node->data.command_call.name==NULL && cmd->value != NULL) {
-		kprintf("Err -> Out of Memory Error!\n");
+		PERR("Err -> Out of Memory Error!\n");
 		parser_free_ast(new_node);
 		return NULL;
 	}
@@ -702,7 +712,7 @@ static ASTNode *parse_command_call() {
 	ASTNode **argv = parse_expression_list(&argc);
 
 	if (argv==NULL && argc != 0) {
-		kprintf("Err -> Out of Memory\n");
+		PERR("Err -> Out of Memory\n");
 		parser_free_ast(new_node);
 		return NULL;
 	}
@@ -718,7 +728,7 @@ static ASTNode **parse_expression_list(size_t *argc) {
 
 	list = (ASTNode**)kmalloc(sizeof(ASTNode*)*cap);
 	if (list==NULL) {
-		kprintf("Err -> Out of Memory -\n");
+		PERR("Err -> Out of Memory -\n");
 		*argc=0;
 		return NULL;
 	}
@@ -738,7 +748,7 @@ static ASTNode **parse_expression_list(size_t *argc) {
 
 		ASTNode *arg = parse_expression();
 		if (arg == NULL) {
-			kprintf("Err -> Out of Memory\n");
+			PERR("Err -> Out of Memory\n");
 			for (size_t i = 0;i<size;i++) {
 				parser_free_ast(list[i]);
 			}
@@ -751,7 +761,7 @@ static ASTNode **parse_expression_list(size_t *argc) {
 			cap *= 2;
 			ASTNode **new_list = (ASTNode **)kmalloc(sizeof(ASTNode*)*cap);
 			if (new_list == NULL) {
-				kprintf("Err -> Out of Memory\n");
+				PERR("Err -> Out of Memory\n");
 				parser_free_ast(arg);
 				for (size_t i = 0;i<size;i++) {
 					parser_free_ast(list[i]);
@@ -777,7 +787,7 @@ static ASTNode *parse_echo() {
 	ASTNode *new_node = newASTNode(NODE_ECHO);
 
 	if (new_node == NULL) {
-		kprintf("Err -> Out of Memory\n");
+		PERR("Err -> Out of Memory\n");
 		return NULL;
 	}
 	Token *echo_k = eat();
@@ -794,7 +804,7 @@ static ASTNode *parse_echo() {
 static ASTNode *parse_return() {
 	ASTNode *new_node = newASTNode(NODE_RETURN);
 	if (new_node == NULL) {
-		kprintf("Err -> Out of Memory\n");
+		PERR("Err -> Out of Memory\n");
 		return NULL;
 	}
 	Token *ret_k=eat();
@@ -821,7 +831,7 @@ static ASTNode *parse_return() {
 static ASTNode *parse_break() {
 	ASTNode *new_node = newASTNode(NODE_BREAK);
 	if (new_node==NULL) {
-		kprintf("Err -> Out of Memory\n");
+		PERR("Err -> Out of Memory\n");
 		return NULL;
 	}
 	Token *break_k = eat();
@@ -835,7 +845,7 @@ static ASTNode **parse_statement_list(size_t *out_s, LTokenType *stop_tokens, si
 	size_t cap = 4;
 	stmt_list = (ASTNode**)kmalloc(sizeof(ASTNode*)*cap);
 	if (stmt_list == NULL) {
-		kprintf("Err -> Out of Memory\n");
+		PERR("Err -> Out of Memory\n");
 		*out_s = 0;
 		return NULL;
 	}
@@ -868,7 +878,7 @@ static ASTNode **parse_statement_list(size_t *out_s, LTokenType *stop_tokens, si
 			cap *= 2;
 			ASTNode **new_stmt_list = (ASTNode**)kmalloc(sizeof(ASTNode*)*cap);
 			if (new_stmt_list==NULL) {
-				kprintf("Err -> Out of Memory\n");
+				PERR("Err -> Out of Memory\n");
 				parser_free_ast(stmt);
 				for (size_t i=0;i<size;i++) {
 					parser_free_ast(stmt_list[i]);
@@ -892,7 +902,7 @@ static ASTNode **parse_statement_list(size_t *out_s, LTokenType *stop_tokens, si
 static ASTNode *parse_if() {
 	ASTNode *new_node = newASTNode(NODE_IF);
 	if (new_node == NULL) {
-		kprintf("Err -> Out of Memory\n");
+		PERR("Err -> Out of Memory\n");
 		return NULL;
 	}
 
@@ -907,7 +917,7 @@ static ASTNode *parse_if() {
 		eat();
 	}
 	if (!match(TOKEN_THEN)) {
-		kprintf("Err -> Expected 'then' after condition\n");
+		PERR("Err -> Expected 'then' after condition\n");
 		parser_free_ast(new_node);
 		return NULL;
 	}
@@ -947,7 +957,7 @@ static ASTNode *parse_if() {
 	while (peek()->type == TOKEN_NEW_LINE) eat();
 
 	if (!match(TOKEN_FI)) {
-		kprintf("Err -> Expected 'fi'\n");
+		PERR("Err -> Expected 'fi'\n");
 		parser_free_ast(new_node);
 		return NULL;
 	}
@@ -957,7 +967,7 @@ static ASTNode *parse_if() {
 static ASTNode *parse_while() {
 	ASTNode *new_node = newASTNode(NODE_WHILE_LOOP);
 	if (new_node==NULL) {
-		kprintf("Err -> Out of Memory\n");
+		PERR("Err -> Out of Memory\n");
 		return NULL;
 	}
 	Token *do_k = eat();
@@ -965,7 +975,7 @@ static ASTNode *parse_while() {
 	while (peek()->type == TOKEN_NEW_LINE) eat();
 
 	if (!match(TOKEN_LBRACE)) {
-		kprintf("Err -> Expected '{' after 'do'\n");
+		PERR("Err -> Expected '{' after 'do'\n");
 		k(new_node);
 		return NULL;
 	}
@@ -979,14 +989,14 @@ static ASTNode *parse_while() {
 			1
 			);
 	if (new_node->data.while_loop.body==NULL || new_node->data.while_loop.s_body == 0) {
-		kprintf("Err -> Expected Statements before '}'\n");
+		PERR("Err -> Expected Statements before '}'\n");
 		parser_free_ast(new_node);
 		return NULL;
 	}
 	while (peek()->type==TOKEN_NEW_LINE) eat();
 
 	if (!match(TOKEN_RBRACE)) {
-		kprintf("Err -> Expected '}' after statements\n");
+		PERR("Err -> Expected '}' after statements\n");
 		parser_free_ast(new_node);
 		return NULL;
 	}
@@ -1003,14 +1013,14 @@ static ASTNode *parse_while() {
 static ASTNode *parse_for() {
 	ASTNode *new_node=newASTNode(NODE_FOR_LOOP);
 	if (new_node==NULL) {
-		kprintf("Err -> Out of Memory\n");
+		PERR("Err -> Out of Memory\n");
 		return NULL;
 	}
 
 	Token *for_tok=eat();
 
 	if (!match(TOKEN_LPAREN)) {
-		kprintf("Err -> Expected '(' after 'for'\n");
+		PERR("Err -> Expected '(' after 'for'\n");
 		k(new_node);
 		return NULL;
 	}
@@ -1025,7 +1035,7 @@ static ASTNode *parse_for() {
 	}
 	
 	if (!match(TOKEN_SEMICOLON)) {
-		kprintf("Err -> Expected ';' after expression\n");
+		PERR("Err -> Expected ';' after expression\n");
 		parser_free_ast(new_node);
 		return NULL;
 	}
@@ -1041,7 +1051,7 @@ static ASTNode *parse_for() {
 	}
 
 	if (!match(TOKEN_SEMICOLON)) {
-		kprintf("Err -> Expected ';' after expression\n");
+		PERR("Err -> Expected ';' after expression\n");
 		parser_free_ast(new_node);
 		return NULL;
 	}
@@ -1057,7 +1067,7 @@ static ASTNode *parse_for() {
 	}
 
 	if (!match(TOKEN_RPAREN)) {
-		kprintf("Err -> Expected ')' after expression\n");
+		PERR("Err -> Expected ')' after expression\n");
 		parser_free_ast(new_node);
 		return NULL;
 	}
@@ -1065,7 +1075,7 @@ static ASTNode *parse_for() {
 	while (peek()->type == TOKEN_NEW_LINE) eat();
 
 	if (!match(TOKEN_DO)) {
-		kprintf("Err -> Expected 'do' at the begining of a for loop\n");
+		PERR("Err -> Expected 'do' at the begining of a for loop\n");
 		parser_free_ast(new_node);
 		return NULL;
 	}
@@ -1088,7 +1098,7 @@ static ASTNode *parse_for() {
 	while (peek()->type == TOKEN_NEW_LINE) eat();
 
 	if (!match(TOKEN_DONE)) {
-		kprintf("Err -> Expected 'done' to close a for loop\n");
+		PERR("Err -> Expected 'done' to close a for loop\n");
 		parser_free_ast(new_node);
 		return NULL;
 	}
