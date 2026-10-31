@@ -1,5 +1,7 @@
 ## 🕒 Funciones de Sistema y Utilidades
 
+### `getenv(var)`: Devuelve el valor de la variable de entorno del nombre especificado
+
 ### `max(a b)`: Devuelve el valor más pequeño
 
 ### `min(a b)`: Devuelve el valor más pequeño

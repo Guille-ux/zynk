@@ -7,6 +7,13 @@
 #include "../include/parser.h"
 #include <stdlib.h>
 
+ShellValue native_getenv(int argc, ShellValue *args) {
+	if (argc < 1) return newNumVal(-1);
+	char *ptr = getenv(args[0].as.str);
+	ShellValue val = newStrVal(ptr);
+	return val;
+}
+
 ShellValue native_max(int argc, ShellValue *args) {
 	if (argc < 2) return newNumVal(-1);
 	return (args[0].as.num > args[1].as.num) ? args[0] : args[1];
@@ -434,4 +441,5 @@ void register_globals(EvalCtx *ctx) {
 	register_cfunc(ctx, "getb", native_getb);
 	register_cfunc(ctx, "max", native_max);
 	register_cfunc(ctx, "min", native_min);
+	register_cfunc(ctx, "getenv", native_getenv);
 }

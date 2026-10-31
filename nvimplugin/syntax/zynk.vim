@@ -4,7 +4,7 @@ endif
 
 syntax keyword zynkKeyword let fn class echo if else return while fi break del for do done
 syntax keyword zynkBoolean true false
-syntax keyword zynkBuiltin min max push pop len Array input read write index getb newb setb chr ord arg float str clock system include import 
+syntax keyword zynkBuiltin min max push pop len Array input read write index getb newb setb chr ord arg float str clock system include import getenv
 
 syntax match zynkComment "#.*$"
 syntax match zynkNumber "\v<\d+(\.\d+)?>"

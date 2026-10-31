@@ -6,7 +6,7 @@ color cyan "\b(let|fn|return|if|then|else|fi|class|echo|del|break|for|do|done|wh
 color green "\b(true|false)\b"
 
 # Funciones nativas y tipos
-color yellow "\b(min|max|push|pop|len|Array|input|include|import|index|read|write|system|clock|str|float|arg|ord|chr|getb|setb|newb)\b"
+color yellow "\b(min|max|push|pop|len|Array|input|include|import|index|read|write|system|clock|str|float|arg|ord|chr|getb|setb|newb|getenv)\b"
 
 # Números (enteros y decimales)
 color magenta "\b[0-9]+(\.[0-9]+)?\b"
