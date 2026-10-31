@@ -68,6 +68,17 @@ void free_tracked_memory() {
     active_tracker = NULL;
 }
 
+#ifdef _WIN32
+    #include <direct.h>
+    #define chdir _chdir
+#else
+    #include <unistd.h>
+#endif
+
+ShellValue native_chdir(int argc, ShellValue *args) {
+	if (argc < 1) return newNumVal(-1);
+	return newNumVal(chdir(args[0].as.str));
+}
 
 ShellValue native_eval(int argc, ShellValue *args) {
 	if (argc < 1) return newNumVal(0);
@@ -465,4 +476,5 @@ void register_globals(EvalCtx *ctx) {
 	register_cfunc(ctx, "min", native_min);
 	register_cfunc(ctx, "getenv", native_getenv);
 	register_cfunc(ctx, "eval", native_eval);
+	register_cfunc(ctx, "chdir", native_chdir);
 }
