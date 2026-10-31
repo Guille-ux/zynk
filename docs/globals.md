@@ -1,5 +1,15 @@
 ## 🕒 Funciones de Sistema y Utilidades
 
+### `chdir(new_dir)`: cambia el directorio de trabajo actual 
+
+### `cwd()`: Devuelve el directorio de trabajo actual
+
+### `listdir(dir)`: devuelve un array que contiene los archivos en el directorio indicado ("." por defecto)
+
+### `rename(old new)`: cambia el nombre del archivo 
+
+### `remove(name)`: elimina el archivo indicado
+
 ### `eval(code)`: Devuelve el entorno en el que se ejecuto el código con eval, similar a import solo que le pasas el código directamente en vez de la ruta al archivo
 
 ### `getenv(var)`: Devuelve el valor de la variable de entorno del nombre especificado
