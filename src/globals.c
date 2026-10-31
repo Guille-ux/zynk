@@ -78,6 +78,15 @@ void free_tracked_memory() {
     #include <unistd.h>
 #endif
 
+ShellValue native_rename(int argc, ShellValue *args) {
+	if (argc < 2) return newNumVal(-1);
+	return newNumVal(rename(args[0].as.str, args[1].as.str));
+}
+ShellValue native_remove(int argc, ShellValue *args) {
+	if (argc < 1) return newNumVal(-1);
+	return newNumVal(remove(args[0].as.str));
+}
+
 ShellValue native_ls(int argc, ShellValue *args) {
     const char *path = ".";
     if (argc >= 1 && args[0].type == VAL_STRING && args[0].as.str != NULL) {
@@ -528,4 +537,6 @@ void register_globals(EvalCtx *ctx) {
 	register_cfunc(ctx, "chdir", native_chdir);
 	register_cfunc(ctx, "cwd", native_cwd);
 	register_cfunc(ctx, "listdir", native_ls);
+	register_cfunc(ctx, "rename", native_rename);
+	register_cfunc(ctx, "remove", native_remove);
 }
