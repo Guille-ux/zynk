@@ -1,5 +1,7 @@
 ## 🕒 Funciones de Sistema y Utilidades
 
+### `eval(code)`: Devuelve el entorno en el que se ejecuto el código con eval, similar a import solo que le pasas el código directamente en vez de la ruta al archivo
+
 ### `getenv(var)`: Devuelve el valor de la variable de entorno del nombre especificado
 
 ### `max(a b)`: Devuelve el valor más pequeño
