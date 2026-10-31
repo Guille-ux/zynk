@@ -6,6 +6,9 @@
 #include "../include/lexer.h"
 #include "../include/parser.h"
 #include <stdlib.h>
+#include <dirent.h>
+
+ShellValue native_array_constructor(int argc, ShellValue *args);
 
 typedef enum {
     PTR_RAW,       // kfree plano (para strings sueltos o buffers)
@@ -56,7 +59,7 @@ void free_tracked_memory() {
             if (item.type == PTR_AST) {
                 parser_free_ast((ASTNode*)item.ptr);
             } else if (item.type == PTR_TOKENS) {
-                lexer_free((Token*)item.ptr); // O free_tokens() según tu cabecera
+                lexer_free((Token*)item.ptr); 
             } else {
                 kfree(item.ptr);
             }
@@ -74,6 +77,52 @@ void free_tracked_memory() {
 #else
     #include <unistd.h>
 #endif
+
+ShellValue native_ls(int argc, ShellValue *args) {
+    const char *path = ".";
+    if (argc >= 1 && args[0].type == VAL_STRING && args[0].as.str != NULL) {
+        path = args[0].as.str;
+    }
+
+    DIR *dir = opendir(path);
+    if (!dir) {
+        return newNumVal(-1); // jejejejejjeje, no se como va esto
+			      // solo le pedi ayuda a internet
+    }
+
+    
+    ShellValue arr_instance = native_array_constructor(0, NULL);
+    
+    // creo q estoy intentando sacar el array interno de la clase
+    InstanceObj *inst = (InstanceObj*)((size_t)arr_instance.as.comodin - sizeof(GCObj));
+    EvalCtx *inst_ctx = inst->ctx;
+    ShellValue data_val = (getShellVarEntrySilent(inst_ctx, "data"))->val;
+    Array *arr = data_val.as.arr;
+
+    // AHORA, o al menos segun internet toca leer el directorio para saber las cosas, idk
+    struct dirent *entry;
+    while ((entry = readdir(dir)) != NULL) {
+        if (arr->size >= arr->capacity) {
+            growArray(arr);
+        }
+        ShellValue item_str = newStrVal(entry->d_name);
+        arr->items[arr->size++] = ref_add(item_str);
+    }
+
+    closedir(dir);
+
+    // devolvemos un array q espero q no explote
+    return arr_instance;
+}
+
+ShellValue native_cwd(int argc, ShellValue *args) {
+    
+    char buffer[1024];
+    if (getcwd(buffer, sizeof(buffer)) != NULL) {
+        return newStrVal(buffer);
+    }
+    return newStrVal("");
+}
 
 ShellValue native_chdir(int argc, ShellValue *args) {
 	if (argc < 1) return newNumVal(-1);
@@ -477,4 +526,6 @@ void register_globals(EvalCtx *ctx) {
 	register_cfunc(ctx, "getenv", native_getenv);
 	register_cfunc(ctx, "eval", native_eval);
 	register_cfunc(ctx, "chdir", native_chdir);
+	register_cfunc(ctx, "cwd", native_cwd);
+	register_cfunc(ctx, "listdir", native_ls);
 }
