@@ -33,8 +33,8 @@ else
 endif
 
 all: folders $(TARGET)
-embed: $(EMBED)
-lib: $(TARGET_LIB)
+embed: folders $(EMBED)
+lib: folders $(TARGET_LIB)
 folders:
 	mkdir -p build
 
