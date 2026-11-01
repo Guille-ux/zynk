@@ -2,7 +2,7 @@ if exists("b:current_syntax")
   finish
 endif
 
-syntax keyword zynkKeyword let fn class echo if else return while fi break del for do done
+syntax keyword zynkKeyword let fn class echo if else return while fi break del for do done and or
 syntax keyword zynkBoolean true false
 syntax keyword zynkBuiltin min max push pop len Array input read write index getb newb setb chr ord arg float str clock system include import getenv eval chdir cwd listdir rename remove slice readB writeB list sleep
 

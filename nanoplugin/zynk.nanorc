@@ -2,7 +2,7 @@ syntax "zynk" "\.zynk$" "\.z$" "\.zk$" "\.zn$"
 header "^#!.*zynk"
 
 # Palabras clave y control de flujo
-color cyan "\b(let|fn|return|if|then|else|fi|class|echo|del|break|for|do|done|while)\b"
+color cyan "\b(let|fn|return|if|then|else|fi|class|echo|del|break|for|do|done|while|or|and)\b"
 color green "\b(true|false)\b"
 
 # Funciones nativas y tipos
