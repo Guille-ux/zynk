@@ -1,5 +1,9 @@
 ## 🕒 Funciones de Sistema y Utilidades
 
+### `writeB(path bytes)`: escribe un objeto de bytes en el archivo
+
+### `readB(path)` : Devuelve un objeto de bytes con el contenido del archivo
+
 ### `slice(text start end)`: devuelve una subcadena del texto indicado que empieza y acaba en los indices indicados
 
 ### `chdir(new_dir)`: cambia el directorio de trabajo actual 

@@ -78,6 +78,40 @@ void free_tracked_memory() {
     #include <unistd.h>
 #endif
 
+ShellValue native_writeB(int argc, ShellValue *args) {
+    if (argc < 2 || args[0].type != VAL_STRING || args[1].type != VAL_OBJ) {
+        return newNumVal(0);
+    }
+    
+    FILE *f = fopen(args[0].as.str, "wb");
+    if (!f) return newNumVal(0);
+    
+    fwrite(args[1].as.obj->info, sizeof(unsigned char), args[1].as.obj->capacity, f);
+    fclose(f);
+    return newNumVal(1); // Éxito, YUPIIII
+}
+
+
+ShellValue native_readB(int argc, ShellValue *args) {
+    if (argc < 1 || args[0].type != VAL_STRING) {
+        return newNumVal(-1);
+    }
+    
+    FILE *f = fopen(args[0].as.str, "rb");
+    if (!f) return newNumVal(-1);
+
+    // a ver, en plan solo asignar lo q necesito
+    fseek(f, 0, SEEK_END);
+    long len = ftell(f);
+    fseek(f, 0, SEEK_SET);
+ 
+    ShellValue val = newObjVal(len);
+    fread(val.as.obj->info, 1, len, f); 
+    fclose(f);
+
+    return val;
+}
+
 ShellValue native_slice(int argc, ShellValue *args) {
 	if (argc < 3) return newNumVal(-1);
 	size_t size = (size_t)(args[1].as.num + args[2].as.num);
@@ -553,4 +587,6 @@ void register_globals(EvalCtx *ctx) {
 	register_cfunc(ctx, "listdir", native_ls);
 	register_cfunc(ctx, "rename", native_rename);
 	register_cfunc(ctx, "remove", native_remove);
+	register_cfunc(ctx, "writeB", native_writeB);
+	register_cfunc(ctx, "readB", native_readB);
 }
