@@ -64,6 +64,7 @@ typedef enum {
 	TOKEN_LET,
 	TOKEN_FN,
 	TOKEN_CLASS,
+	TOKEN_MOD,
 	TOKEN_DEL, // ya sabes para el del statement
 		   // y eliminar variables principalmente
 	/*

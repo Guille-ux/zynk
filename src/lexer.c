@@ -129,6 +129,7 @@ Token lexer_next_token() {
 			case ',': advance(); return newToken(TOKEN_COMMA, ",", 1);
 			case ':': advance(); return newToken(TOKEN_COLON, ":", 1);
 			case '.': advance(); return newToken(TOKEN_DOT, ".", 1);
+			case '%': advance(); return newToken(TOKEN_MOD, "%", 1);
 			case '!': 
 				advance();
 				if (peek()=='=') {

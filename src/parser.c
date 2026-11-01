@@ -566,7 +566,7 @@ static ASTNode *parse_factor() {
 
 static ASTNode *parse_term() {
 	ASTNode *left_node = parse_factor();
-	while ((peek()->type == TOKEN_MUL || peek()->type == TOKEN_DIV)) {
+	while ((peek()->type == TOKEN_MUL || peek()->type == TOKEN_DIV || peek()->type == TOKEN_MOD)) {
 		Token *op = eat();
 
 		ASTNode *right_node=parse_factor();
@@ -596,7 +596,8 @@ static ASTNode *parse_term() {
 static int get_precedence(LTokenType type) {
     switch(type) {
         case TOKEN_MUL: 
-        case TOKEN_DIV: 
+        case TOKEN_DIV:
+	case TOKEN_MOD:
             return 4;
 	case TOKEN_MINUS:
         case TOKEN_PLUS:

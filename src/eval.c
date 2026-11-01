@@ -1,5 +1,6 @@
 #include "../include/eval.h"
 #include "../include/modules.h"
+#include <math.h>
 
 // Value
 static ShellValue evalNum(ASTNode *num);
@@ -899,6 +900,8 @@ static ShellValue evalUnaryExpr(ASTNode *expr, EvalCtx *ctx) {
 	return result;
 }
 
+#include <math.h>
+
 static ShellValue evalBinExpr(ASTNode *expr, EvalCtx *ctx) {
 	ShellValue left = evalExpr(expr->data.binary_expr.left, ctx);
 	if (left.type==VAL_NONE) {
@@ -914,7 +917,8 @@ static ShellValue evalBinExpr(ASTNode *expr, EvalCtx *ctx) {
 	bool is_math = (expr->data.binary_expr.op == TOKEN_PLUS ||
                              expr->data.binary_expr.op == TOKEN_MINUS ||
                              expr->data.binary_expr.op == TOKEN_MUL ||
-                             expr->data.binary_expr.op == TOKEN_DIV);
+                             expr->data.binary_expr.op == TOKEN_DIV ||
+			     expr->data.binary_expr.op == TOKEN_MOD);
 	bool is_cmp = (expr->data.binary_expr.op == TOKEN_EQ ||
 			     expr->data.binary_expr.op == TOKEN_AND ||
 			     expr->data.binary_expr.op == TOKEN_OR ||
@@ -943,6 +947,7 @@ static ShellValue evalBinExpr(ASTNode *expr, EvalCtx *ctx) {
 					break;
 						}
 				case TOKEN_PLUS: result = newNumVal(left.as.num + right.as.num); break;
+				case TOKEN_MOD: result = newNumVal(fmod(left.as.num, right.as.num)); break;
 			}
 		} else if (left.type == VAL_STRING || right.type == VAL_STRING) {
 			if (expr->data.binary_expr.op==TOKEN_PLUS) {

@@ -27,7 +27,7 @@ else
 	CC = gcc
 	CFLAGS = -D_LINUX -Wall -Wextra -c $(EXTRA) -O3
 	#CFLAGS = -D_LINUX -Wall -Wextra -c $(EXTRA) -O0 -march=armv6zk -mfloat-abi=hard -mfpu=vfp
-	LIBS = -ldl
+	LIBS = -ldl -lm
 	TARGET_LIB = lib/mylib.so
 	TARGET = $(BUILD)/zynk
 endif
