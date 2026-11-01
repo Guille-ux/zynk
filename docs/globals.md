@@ -1,5 +1,7 @@
 ## 🕒 Funciones de Sistema y Utilidades
 
+### `list(dict)`: devuelve una lista conformada por las claves del diccionario indicado
+
 ### `writeB(path bytes)`: escribe un objeto de bytes en el archivo
 
 ### `readB(path)` : Devuelve un objeto de bytes con el contenido del archivo
