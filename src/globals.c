@@ -73,38 +73,57 @@ void free_tracked_memory() {
 
 #ifdef _WIN32
     #include <direct.h>
+    #include <windows.h>
     #define chdir _chdir
 #else
     #include <unistd.h>
 #endif
 
+ShellValue native_sleep(int argc, ShellValue *args) {
+	if (argc < 1 || args[0].type != VAL_NUMBER) {
+	return newNumVal(0);
+	}
+
+	double ms = args[0].as.num; 
+
+#ifdef _WIN32
+    
+	Sleep((DWORD)ms);
+#else
+    
+	usleep((useconds_t)(ms * 1000.0));
+#endif
+
+	return newNumVal(1);
+}
+
 ShellValue native_list(int argc, ShellValue *args) {
-    if (argc < 1 || args[0].type != VAL_DICT) { 
-        return newNumVal(-1);
-    }
+	if (argc < 1 || args[0].type != VAL_DICT) { 
+		return newNumVal(-1);
+	}
 
     
-    InstanceObj *inst = (InstanceObj*)((size_t)args[0].as.comodin - sizeof(GCObj));
-    EvalCtx *inst_ctx = inst->ctx;
+	InstanceObj *inst = (InstanceObj*)((size_t)args[0].as.comodin - sizeof(GCObj));
+	EvalCtx *inst_ctx = inst->ctx;
 
     
-    ShellValue arr_instance = native_array_constructor(0, NULL);
-    InstanceObj *arr_inst = (InstanceObj*)((size_t)arr_instance.as.comodin - sizeof(GCObj));
-    Array *arr = (getShellVarEntrySilent(arr_inst->ctx, "data"))->val.as.arr;
+	ShellValue arr_instance = native_array_constructor(0, NULL);
+	InstanceObj *arr_inst = (InstanceObj*)((size_t)arr_instance.as.comodin - sizeof(GCObj));
+	Array *arr = (getShellVarEntrySilent(arr_inst->ctx, "data"))->val.as.arr;
 
     
-    for (size_t i = 0; i < inst_ctx->var_cap; i++) {
-        Var *v = &inst_ctx->var_table[i];
-        if (v->is_set && v->name != NULL) {
+	for (size_t i = 0; i < inst_ctx->var_cap; i++) {
+		Var *v = &inst_ctx->var_table[i];
+		if (v->is_set && v->name != NULL) {
             
-            if (arr->size >= arr->capacity) {
-                growArray(arr);
-            }
-            arr->items[arr->size++] = ref_add(newStrVal(v->name));
-        }
-    }
+			if (arr->size >= arr->capacity) {
+				growArray(arr);
+			}
+			arr->items[arr->size++] = ref_add(newStrVal(v->name));
+		}
+	}
 
-    return arr_instance;
+	return arr_instance;
 }
 
 ShellValue native_writeB(int argc, ShellValue *args) {
@@ -619,4 +638,5 @@ void register_globals(EvalCtx *ctx) {
 	register_cfunc(ctx, "writeB", native_writeB);
 	register_cfunc(ctx, "readB", native_readB);
 	register_cfunc(ctx, "list", native_list);
+	register_cfunc(ctx, "sleep", native_sleep);
 }

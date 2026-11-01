@@ -1,5 +1,7 @@
 ## 🕒 Funciones de Sistema y Utilidades
 
+### `sleep(time)`: pone el programa dormir durante la cantidad de tiempo indicada (en milisegundos)
+
 ### `list(dict)`: devuelve una lista conformada por las claves del diccionario indicado
 
 ### `writeB(path bytes)`: escribe un objeto de bytes en el archivo
