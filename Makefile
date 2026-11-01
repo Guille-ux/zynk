@@ -10,7 +10,9 @@ ARFLAGS = rcs
 SRC = src
 TARGET_LIB = lib/mylib.so
 LIB_SRC = lib/mylib.c
+MAIN_EMBED = $(BUILD)/embed.o
 MAIN_OBJ = $(BUILD)/zynk.o
+EMBED = $(BUILD)/embed
 TARGET = $(BUILD)/zynk
 OBJS = $(BUILD)/mbtype.o $(BUILD)/parser.o $(BUILD)/lexer.o $(BUILD)/eval.o $(BUILD)/globals.o $(BUILD)/chunk.o $(BUILD)/vm.o $(BUILD)/compiler.o
 ifeq ($(OS),windows)
@@ -31,10 +33,16 @@ else
 endif
 
 all: folders $(TARGET)
+embed: $(EMBED)
 lib: $(TARGET_LIB)
 folders:
 	mkdir -p build
 
+$(MAIN_EMBED): $(SRC)/embed.c
+	$(CC) $(CFLAGS) -o $(MAIN_EMBED) $(SRC)/embed.c
+
+$(EMBED): $(OBJS) $(MAIN_EMBED)
+	$(CC) $(CF2) $(OBJS) $(MAIN_EMBED) $(LIBS) -o $(EMBED)
 
 $(TARGET): $(OBJS) $(MAIN_OBJ)
 	$(CC) $(CF2) $(OBJS) $(MAIN_OBJ) $(LIBS) -o $(TARGET)

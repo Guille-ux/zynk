@@ -78,6 +78,20 @@ void free_tracked_memory() {
     #include <unistd.h>
 #endif
 
+ShellValue native_slice(int argc, ShellValue *args) {
+	if (argc < 3) return newNumVal(-1);
+	size_t size = (size_t)(args[1].as.num + args[2].as.num);
+	char *buffer = malloc(size+1);
+	// con eso pillamos un buffer q va a poder pillar todo el tamaño creo
+	// ahora copiamos con memcpy
+	memcpy(buffer, &args[0].as.str, size);
+	buffer[size] = '\0';
+	ShellValue val = newStrVal(buffer);
+	free(buffer);
+	return val;
+
+}
+
 ShellValue native_rename(int argc, ShellValue *args) {
 	if (argc < 2) return newNumVal(-1);
 	return newNumVal(rename(args[0].as.str, args[1].as.str));
