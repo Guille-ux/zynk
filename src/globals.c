@@ -89,7 +89,7 @@ ShellValue native_exists(int argc, ShellValue *args) {
 	Var *v = getShellVarEntrySilent(inst_ctx, args[0].as.str);
 	inst_ctx->parent = parent;
 	inst_ctx->global = get_global();
-	if (v==NULL) return newNumVal(-1);
+	if (v==NULL) return newNumVal(0);
 
 	return newNumVal(1);
 }
