@@ -65,7 +65,7 @@ do {
 * **Definición de Función:**
 ```zynk
 fn mi_funcion {
-    let respuesta = Net:recv($0, 1)
+    let respuesta = Net:recv($0 1) # en las llamadas no hay comas para separar las expresiones
     return respuesta
 }
 
@@ -85,10 +85,10 @@ class MiEstructura {
 
 #### 4. Tipos de Datos y Operadores
 
-* **Cadenas de Texto:** Comillas dobles `"..."` con soporte nativo de escapes (`\n`, `\r`, `\\`) en el lexer o comillas simples `'...'`.
+* **Cadenas de Texto:** Comillas dobles `"..."` con soporte nativo de escapes (`\n`, `\r`, `\\`, '\t') en el lexer o comillas simples `'...'`.
 * **Comentarios:** Empiezan por `#` hasta el final de la línea.
 * **Operadores Lógicos y Aritméticos:**
-* Matematicas: `+`, `-`, `*`, `/`
+* Matematicas: `+`, `-`, `*`, `/`, `%`
 * Comparación: `==`, `!=`, `<`, `>`, `<=`, `>=`
 * Lógicos: `and`, `or`, `!`
 * Comandos/Pipes: `|`, `||`

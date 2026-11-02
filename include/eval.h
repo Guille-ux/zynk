@@ -79,7 +79,7 @@ typedef struct ShellValue {
 
 typedef ShellValue (*NativeFunc)(int argc, ShellValue *args);
 
-typedef struct {
+typedef struct ArrayObj {
     GCObj data;
     int size;
     int capacity;
