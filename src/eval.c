@@ -2,6 +2,28 @@
 #include "../include/modules.h"
 #include <math.h>
 
+void printVal(ShellValue val) {
+  if (val.type == VAL_NUMBER) {
+    kprintf("%f\n", val.as.num);
+  } else if (val.type == VAL_STRING) {
+    kprintf("%s\n", (const char *)val.as.str);
+  } else if (val.type == VAL_DICT) {
+    InstanceObj *inst = (InstanceObj *)((size_t)val.as.comodin - sizeof(GCObj));
+    EvalCtx *rctx = inst->ctx;
+    for (int i = 0; i < rctx->var_cap; i++) {
+      if (rctx->var_table[i].name == NULL) continue;
+      printf("Name: %s -> ", rctx->var_table[i].name);
+      printVal(rctx->var_table[i].val);
+    }
+  } else if (val.type==VAL_ARRAY) { // este si lo podemos imprimir
+    for (int i=0;i<val.as.arr->size;i++) {
+      printVal(val.as.arr->items[i]);
+    }
+  } else {
+    kprintf("Err -> Unknown type\n");
+  }
+}
+
 // Value
 static ShellValue evalNum(ASTNode *num);
 static ShellValue evalStr(ASTNode *str);
@@ -723,25 +745,7 @@ static int evalVarDef(ASTNode *stmt, EvalCtx *ctx) {
 
 static int evalEcho(ASTNode *stmt, EvalCtx *ctx) {
 	ShellValue val = evalExpr(stmt->data.echo_stmt.expr, ctx);
-	if (val.type == VAL_NUMBER) {
-		kprintf("%f\n", val.as.num);
-	} else if (val.type == VAL_STRING) {
-		kprintf("%s\n", (const char *)val.as.str);
-	} else if (val.type == VAL_DICT) {
-		InstanceObj *inst = (InstanceObj*)((size_t)val.as.comodin - sizeof(GCObj));
-		EvalCtx *rctx = inst->ctx;	
-		for (int i=0;i<rctx->var_cap;i++) {
-			if (rctx->var_table[i].name==NULL) continue;
-			printf("Name: %s -> ", rctx->var_table[i].name);
-			if (rctx->var_table[i].val.type==VAL_STRING) {
-				printf("%s\n", rctx->var_table[i].val.as.str);
-			} else if (rctx->var_table[i].val.type==VAL_NUMBER){
-				printf("%lf\n", rctx->var_table[i].val.as.num);
-			}
-		}
-	} else {
-		kprintf("Err -> Unknown type\n");
-	}
+	printVal(val);
 	return EVAL_OK;
 }
 

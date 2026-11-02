@@ -208,6 +208,7 @@ void delShellVarEntry(EvalCtx *ctx, char *name);
 uint32_t zhash(char *name); // aham, a futuro
 
 
+void printVal(ShellValue val);
 ShellValue ref_add(ShellValue val);
 void ref_del(ShellValue val);
 ShellValue evalExpr(ASTNode *expr, EvalCtx *ctx);
