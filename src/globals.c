@@ -82,10 +82,13 @@ void free_tracked_memory() {
 ShellValue native_exists(int argc, ShellValue *args) {
 	if (argc < 2) return newNumVal(-1);
 	InstanceObj *inst = (InstanceObj*)((size_t)args[1].as.comodin - sizeof(GCObj));
-	EvalCtx *inst_ctx = inst->ctx; 
-
+	EvalCtx *inst_ctx = inst->ctx;
+	EvalCtx *parent = inst_ctx->parent;
+	inst_ctx->global = NULL;
+	inst_ctx->parent = NULL;
 	Var *v = getShellVarEntrySilent(inst_ctx, args[0].as.str);
-
+	inst_ctx->parent = parent;
+	inst_ctx->global = get_global();
 	if (v==NULL) return newNumVal(-1);
 
 	return newNumVal(1);
