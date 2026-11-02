@@ -162,16 +162,15 @@ ShellValue native_readB(int argc, ShellValue *args) {
 
 ShellValue native_slice(int argc, ShellValue *args) {
 	if (argc < 3) return newNumVal(-1);
-	size_t size = (size_t)(args[1].as.num + args[2].as.num);
+	size_t size = (size_t)((int)args[1].as.num + (int)args[2].as.num);
 	char *buffer = malloc(size+1);
 	// con eso pillamos un buffer q va a poder pillar todo el tamaño creo
 	// ahora copiamos con memcpy
-	memcpy(buffer, &args[0].as.str, size);
+	memcpy(buffer, &args[0].as.str[(int)args[1].as.num], size);
 	buffer[size] = '\0';
 	ShellValue val = newStrVal(buffer);
 	free(buffer);
 	return val;
-
 }
 
 ShellValue native_rename(int argc, ShellValue *args) {
