@@ -1,5 +1,7 @@
 ## 🕒 Funciones de Sistema y Utilidades
 
+### `exists(key dict)` devuelve 1 si la clave existe en el diccionario en caso contrario devuelve 0
+
 ### `sleep(time)`: pone el programa dormir durante la cantidad de tiempo indicada (en milisegundos)
 
 ### `list(dict)`: devuelve una lista conformada por las claves del diccionario indicado

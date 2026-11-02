@@ -79,6 +79,18 @@ void free_tracked_memory() {
     #include <unistd.h>
 #endif
 
+ShellValue native_exists(int argc, ShellValue *args) {
+	if (argc < 2) return newNumVal(-1);
+	InstanceObj *inst = (InstanceObj*)((size_t)args[1].as.comodin - sizeof(GCObj));
+	EvalCtx *inst_ctx = inst->ctx; 
+
+	Var *v = getShellVarEntrySilent(inst_ctx, args[0].as.str);
+
+	if (v==NULL) return newNumVal(-1);
+
+	return newNumVal(1);
+}
+
 ShellValue native_sleep(int argc, ShellValue *args) {
 	if (argc < 1 || args[0].type != VAL_NUMBER) {
 	return newNumVal(0);
@@ -639,4 +651,5 @@ void register_globals(EvalCtx *ctx) {
 	register_cfunc(ctx, "list", native_list);
 	register_cfunc(ctx, "sleep", native_sleep);
 	register_cfunc(ctx, "slice", native_slice);
+	register_cfunc(ctx, "exists", native_exists);
 }
