@@ -639,4 +639,5 @@ void register_globals(EvalCtx *ctx) {
 	register_cfunc(ctx, "readB", native_readB);
 	register_cfunc(ctx, "list", native_list);
 	register_cfunc(ctx, "sleep", native_sleep);
+	register_cfunc(ctx, "slice", native_slice);
 }
