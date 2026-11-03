@@ -436,16 +436,23 @@ CFunc natives[MAX_NATIVE_FUNCS];
 ShellValue native_import(int argc, ShellValue *args) {
 	if (argc < 1) return newNumVal(0);
 	char *str = args[0].as.str;
-	FILE *f = fopen(str, "r");
+	FILE *f = fopen(str, "rb");
 	fseek(f, 0, SEEK_END);
 	size_t size = ftell(f);
 	fseek(f, 0, SEEK_SET);
 	char *buffer = kmalloc(size+1);
-	fread(buffer, 1, size, f);
+	size_t _read = fread(buffer, 1, size, f);
 	buffer[size] = '\0';
+	size_t offset = 0;
+
+	if (_read >= 3 && (buffer[0]==0xEF && buffer[1]==0xBB && buffer[2]==0xBF)) {
+		offset = 3;
+	}
+
+	char *real_buff = (char*)((size_t)buffer + offset);
 
 	EvalCtx *current = newShellCtx();
-	lexer_init(buffer);
+	lexer_init(real_buff);
 	Token *t_buff = lexe(NULL);
 	parser_init(t_buff);
 	ASTNode *tree=parse();
