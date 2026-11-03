@@ -1,0 +1,14 @@
+#
+# Factorial Example for Zynk
+#
+
+fn factorial {
+	let n = $0
+
+	if n <= 1 then return n fi
+
+	return n * factorial(n-1)
+}
+
+
+echo "Factorial of 9: " + factorial(9)

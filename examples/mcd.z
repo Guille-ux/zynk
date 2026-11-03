@@ -1,0 +1,19 @@
+#
+# Example program, so idk
+# this will use the Euclides Algorithm to compute the
+# Maximun Common Divisor
+#
+
+fn mcd {
+	let a = $0
+	let b = $1
+	if b==0 then
+		return a
+	fi
+	return mcd(b a%b)
+}
+
+let a = 35
+let b = 50
+
+echo "MCD of " + a + " and " + b + ": " + mcd(a b)

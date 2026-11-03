@@ -1,0 +1,18 @@
+#
+# This is a example of array use
+#
+
+let my_array = Array() 			# array definition
+echo "Len: " + my_array:len(my_array) 	# classes from C are an exception
+					# in those you have to pass the object
+					# explicitly
+
+my_array:push(my_array "Hello!") # adding an object
+
+echo "Val at index 0: " + index(my_array:data 0)
+
+echo "Len: " + my_array:len(my_array) 
+
+my_array:pop(my_array) # removes the last object on the array
+
+echo "Final Length: " + my_array:len(my_array)

@@ -1,0 +1,10 @@
+#
+# This is an example of how to use import() 
+#
+
+let fib = import("fib.z") 	# the paths are relative to where is 
+				# the file being executed
+				# it also executes the entire file
+				# yk
+
+echo "Fibonacci Nº 32: " + fib:fib(32)

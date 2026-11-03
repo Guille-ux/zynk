@@ -1,0 +1,19 @@
+#
+# basically the same code found in benchmarks/fib.z but without the 
+# clock() thing
+#
+
+fn fib {
+	let n = $0
+	if n<=1 then return n fi
+
+	return fib(n-1) + fib(n-2)
+}
+
+let _max = 10
+let i
+
+do {
+	i = i + 1
+	echo "Fib of " + i + ": " + fib(i)
+} while i < _max

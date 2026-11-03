@@ -1,0 +1,23 @@
+#
+# This is a example of classes and objects
+#
+
+class Car {
+	# variables!
+	let brand = "Volkswagen"
+	let model = "Golf Plus"
+	#functions (there's no order but i like to put the vars first)
+	fn crash {
+		echo "Crash!"
+	}
+	fn info {
+		# functions can access variables from their object
+		# because the functions parent is the object
+		echo "Brand: " + brand
+		echo "Model: " + model
+	}
+}
+
+let my_car = Car()
+my_car:info()
+my_car:crash()
