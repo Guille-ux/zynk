@@ -1,3 +1,7 @@
+<div align="center">
+      <img src="logo.png" alt="Zynk Logo">
+</div>
+
 # Zynk
 *this is my interpreted programming language!*
 
