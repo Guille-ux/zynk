@@ -10,6 +10,7 @@
 
 int main(int argc, char *argv[]) {
 	//initArena();
+	init_tracker();
 	if (argc < 2) {
 		printf("Use: %s <filename>\n", argv[0]);
 		return 1;

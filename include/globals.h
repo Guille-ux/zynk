@@ -5,7 +5,7 @@
 
 #define MAX_NATIVE_FUNCS 64
 
-
+void init_tracker();
 void cleanAll();
 int load_plugins(const char *file, EvalCtx *ctx);
 

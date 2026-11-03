@@ -92,23 +92,38 @@ void addObj(GCObj *obj) {
 	GCObj *current = obj_pool;
 	obj_pool = obj;
 	obj_pool->next = current;
+	if (current!=NULL) {
+		obj_pool->last = current->last;
+		current->last = obj_pool;
+	}
+	obj_pool->last = NULL;
 }
 
 bool lock=false; // para q es esto? para evitar q se dispare el gc
 		 // despues de eliminar referencias de lo q borra, yk
 
+void unlinkObj(GCObj *obj) {
+    if (obj->last != NULL) {
+        obj->last->next = obj->next;
+    } else {
+        obj_pool = obj->next;
+    }
+
+    if (obj->next != NULL) {
+        obj->next->last = obj->last;
+    }
+}
+
 void delObj(GCObj *obj) {
 	lock=true;
-	if (obj->last==NULL) {
-		obj_pool=obj->next;
-	} else {
-		obj->last->next = obj->next;
-	}
+	unlinkObj(obj);
 	if (obj->obj.magic==ZYNK_MAGIC_CLASS) {
 		void *ptr = (void*)((size_t)obj+sizeof(GCObj));
 		killShellCtx((EvalCtx*)ptr);
-	}
-	if (obj->obj.magic==ZYNK_MAGIC_ARRAY) {
+	} else if (obj->obj.magic==ZYNK_MAGIC_INSTANCE) {
+		InstanceObj *inst = (InstanceObj *)obj;
+		killShellCtx(inst->ctx);
+	} else if (obj->obj.magic==ZYNK_MAGIC_ARRAY) {
 		ArrayObj *obj = (ArrayObj*)obj;
 		void *ptr = (void*)obj->items;
 		if (obj->capacity==0) {
@@ -221,7 +236,7 @@ ShellValue newInstanceVal(EvalCtx *ctx) {
 	val.as.comodin = (void*)((size_t)instance + sizeof(GCObj));
 	instance->ctx = ctx;
 	instance->data.obj.refc = 0;
-	instance->data.obj.magic = ZYNK_MAGIC_CLASS;
+	instance->data.obj.magic = ZYNK_MAGIC_INSTANCE;
 	addObj((GCObj*)instance);
 	return val;
 }
@@ -282,7 +297,7 @@ void midKillShellCtx(EvalCtx *ctx) {
 	if (ctx==NULL) return;
 
 	for (size_t i=0;i<ctx->var_cap;i++) {
-		if (ctx->var_table[i].is_set && ctx->var_table[i].name!=NULL && ctx->var_table[i].val.as.comodin!=NULL) {
+		if (ctx->var_table[i].is_set && ctx->var_table[i].name!=NULL && ctx->var_table[i].val.as.comodin!=NULL && ctx->var_table[i].val.as.comodin!=ctx->ret.as.comodin) {
 			ref_del(ctx->var_table[i].val);
 		}
 	}
@@ -336,7 +351,9 @@ void killShellCtx(EvalCtx *ctx) {
 	for (size_t i=0;i<ctx->var_cap;i++) {
 		if (ctx->var_table[i].is_set) {
 			ref_del(*(ShellValue*)((size_t)ctx->var_table[i].name-sizeof(ValType)));
-			ref_del(ctx->var_table[i].val);
+			if (ctx->var_table[i].val.as.comodin!=ctx->ret.as.comodin) {
+				ref_del(ctx->var_table[i].val);
+			}
 		}
 	}
 	for (size_t i=0;i<ctx->arg_used;i++) {
@@ -521,7 +538,7 @@ ShellValue ref_add(ShellValue val) {
 }
 
 void ref_del(ShellValue val) {
-	if (lock) return;
+	
 	if (!isHeap(val.as.comodin)) return;
 	if (val.type==VAL_STRING ||
 	    val.type==VAL_FUNC ||
@@ -531,7 +548,7 @@ void ref_del(ShellValue val) {
 		Obj *data = (Obj*)((size_t)val.as.comodin - sizeof(Obj));	
 		if (data->refc != 0) {
 			data->refc--;
-		} else {
+		} else if (!lock) {
 			zynk_gc();
 		}
 	}	

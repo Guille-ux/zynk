@@ -9,8 +9,9 @@
 
 struct EvalCtx;
 
-#define ZYNK_MAGIC_CLASS    0x434C4153
-#define ZYNK_MAGIC_ARRAY    0x434C4152
+#define ZYNK_MAGIC_CLASS     0x434C4153
+#define ZYNK_MAGIC_INSTANCE  0x494E5354
+#define ZYNK_MAGIC_ARRAY     0x434C4152
 
 
 
@@ -180,6 +181,7 @@ void freeVal(ShellValue val);
 void addShellArg(EvalCtx *ctx, ShellValue val);
 ShellValue getShellArg(EvalCtx *ctx, size_t id);
 
+void unlinkObj(GCObj *obj);
 void addObj(GCObj *obj);
 void delObj(GCObj *obj);
 void zynk_gc();
