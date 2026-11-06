@@ -185,6 +185,7 @@ void unlinkObj(GCObj *obj);
 void addObj(GCObj *obj);
 void delObj(GCObj *obj);
 void zynk_gc();
+void zynk_clean();
 
 /*
  * Status Codes

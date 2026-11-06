@@ -173,6 +173,15 @@ void zynk_gc() {
 	}
 }
 
+void zynk_clean() {
+	GCObj *current = obj_pool;
+	while (current!=NULL) {
+		GCObj *next = current->next;
+		delObj(current);
+		current = next;
+	}
+}
+
 bool isHeap(void *ptr) {
 	GCObj *current = obj_pool;
 	while (current!=NULL) {
