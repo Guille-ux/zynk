@@ -1,0 +1,57 @@
+#
+# example for patterns on zynk, you know some simple
+# Natural Language Processing
+#
+
+class Dict {} # un diccionario
+
+fn pattern { # la función NUCLEO del procesamiento de lenguaje natural de mi
+	     # ALICE, es una obra de arte
+	let text = $0
+	let pat = $1
+	let cur0
+	let cur1
+	let dict = Dict() # cramos diccionario
+	let arr = Array()
+	let txt = "\0"
+	let flag = 0
+	let dict:res
+	let dict:wild
+	
+	for (;cur0<len(text);) do	
+		if index(pat cur1) == "*" then
+			if flag then
+				flag = 0
+				txt = "\0"
+			fi
+			txt = txt + index(text cur0)
+			cur0 = cur0 + 1
+			if index(text cur0)==" " or len(text) <= cur0 then
+				cur1 = cur1 + 1
+				flag = 1
+				arr:push(arr txt)
+			fi
+		
+		else if index(pat cur1)!=index(text cur0) then
+			return dict
+		else
+			cur0 = cur0 + 1
+			cur1 = cur1 + 1
+		fi
+		fi
+	done
+	dict:wild = arr
+	dict:res = 1
+	return dict
+}
+let txt = "my name is guille"
+let pat = "my name is *"
+
+echo "Text: " + txt
+echo "Pattern to Match: " + pat
+
+let data = pattern(txt pat)
+echo "Matched? -> " + data:res
+echo "--Wildcards--"
+echo data:wild:data
+

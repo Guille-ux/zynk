@@ -12,8 +12,10 @@ fn fib {
 
 let _max = 10
 let i
-
+let text
 do {
 	i = i + 1
-	echo "Fib of " + i + ": " + fib(i)
+	text = "Fib of " + i
+	text = text + ": " + str(fib(i))
+	echo text
 } while i < _max
