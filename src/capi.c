@@ -60,8 +60,6 @@ ShellValue exec(const char *code, int argc, ShellValue *argv) {
 
 	killShellCtx(ctx);
 
-	cleanAll();
-
 	return val; // adding references, programs have to
 			  // delete the reference
 }
