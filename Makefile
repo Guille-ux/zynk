@@ -9,6 +9,7 @@ AR = ar
 ARFLAGS = rcs
 SRC = src
 TARGET_LIB = lib/mylib.so
+STATIC_LIB = $(BUILD)/libzynk.a
 LIB_SRC = lib/mylib.c
 MAIN_EMBED = $(BUILD)/embed.o
 MAIN_OBJ = $(BUILD)/zynk.o
@@ -32,7 +33,7 @@ else
 	TARGET = $(BUILD)/zynk
 endif
 
-all: folders $(TARGET)
+all: folders $(TARGET) $(STATIC_LIB)
 embed: folders $(EMBED)
 lib: folders $(TARGET_LIB)
 folders:
@@ -66,7 +67,7 @@ $(BUILD)/chunk.o: $(SRC)/chunk.c
 $(BUILD)/globals.o: $(SRC)/globals.c
 	$(CC) $(CFLAGS) -o $(BUILD)/globals.o $(SRC)/globals.c
 
-$(BUILD)/libzynk.a: $(OBJS)
+STATIC_LIB: $(OBJS)
 	$(AR) $(ARFLAGS) $(BUILD)/libzynk.a $(OBJS)
 
 $(BUILD)/mbtype.o: $(SRC)/mbtype.c
