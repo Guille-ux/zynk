@@ -20,6 +20,12 @@ int killZynk() {
 	return 0;
 }
 
+int cleanZynk() {
+	zynk_clean();
+	cleanAll();
+	return 0;
+}
+
 ShellValue exec(const char *code, int argc, ShellValue *argv) {
 	EvalCtx *ctx = newShellCtx();
 

@@ -14,6 +14,7 @@
  */
 
 int killZynk();
+int cleanZynk();
 
 int init(); // initializes the memory tracker, the global eval ctx
 	    // etc etc
