@@ -31,7 +31,6 @@ ShellValue exec(const char *code, int argc, ShellValue *argv) {
 	  // so yeah, if you import something it can't use your
 	  // args, i'm sorry
 
-	ShellValue val = ref_add(ctx->ret);
 	
 	lexer_init(code);
 
@@ -56,6 +55,8 @@ ShellValue exec(const char *code, int argc, ShellValue *argv) {
 	parser_free_ast(tree);
 	lexer_free(t_buff);
 	free(t_buff);
+
+	ShellValue val = ref_add(ctx->ret);
 
 	killShellCtx(ctx);
 
