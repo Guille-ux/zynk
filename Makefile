@@ -67,8 +67,8 @@ $(BUILD)/chunk.o: $(SRC)/chunk.c
 $(BUILD)/globals.o: $(SRC)/globals.c
 	$(CC) $(CFLAGS) -o $(BUILD)/globals.o $(SRC)/globals.c
 
-STATIC_LIB: $(OBJS)
-	$(AR) $(ARFLAGS) $(BUILD)/libzynk.a $(OBJS)
+$(STATIC_LIB): $(OBJS)
+	$(AR) $(ARFLAGS) $(STATIC_LIB) $(OBJS)
 
 $(BUILD)/mbtype.o: $(SRC)/mbtype.c
 	$(CC) $(CFLAGS) -o $(BUILD)/mbtype.o $(SRC)/mbtype.c
