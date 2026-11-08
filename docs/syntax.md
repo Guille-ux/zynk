@@ -81,7 +81,20 @@ class MiEstructura {
 
 ```
 
+* **Acceder a un miembro**
 
+```zynk
+echo miobjeto:valor # tmb sirve miobjeto.valor
+```
+
+* **Instanciar una clase**
+```zynk
+Class miclase {
+    let valor = "Hola!"
+}
+
+let obj = miclase()
+```
 
 #### 4. Tipos de Datos y Operadores
 

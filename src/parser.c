@@ -145,7 +145,7 @@ static ASTNode *parse_member() {
 		if (eat()->type!=TOKEN_RBRACKET) {
 			PERR("Err -> Expected Bracket\n");
 		}
-	} else if (peek()->type==TOKEN_COLON) {
+	} else if (peek()->type==TOKEN_COLON || peek()->type==TOKEN_DOT) {
 		eat();
 		Token *current = eat();
 		expr = newASTNode(NODE_STRING_LIT);
