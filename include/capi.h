@@ -22,5 +22,6 @@ int initGlobals(); // just initializes the globals from std zynk yk
 		   // if you wanna add more you'll have to add other
 		   // things
 ShellValue exec(const char *code, int argc, ShellValue *argv);
+ShellValue getInstanceVal(ShellValue val, const char *name);
 
 #endif

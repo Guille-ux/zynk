@@ -69,3 +69,10 @@ ShellValue exec(const char *code, int argc, ShellValue *argv) {
 	return val; // adding references, programs have to
 			  // delete the reference
 }
+
+ShellValue getInstanceVal(ShellValue val, const char *name) {
+	EvalCtx *rctx;
+	InstanceObj *inst = (InstanceObj*)((size_t)val.as.comodin - sizeof(GCObj));
+	rctx = inst->ctx;
+	return getShellVarEntrySilent(rctx, name)->val;
+}

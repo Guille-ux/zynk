@@ -150,7 +150,6 @@ ShellValue newClassVal(struct EvalCtx *ctx, ASTNode *program);
 ShellValue newInstanceVal(struct EvalCtx *ctx);
 
 
-
 typedef struct EvalCtx {
 	struct EvalCtx *parent;
 	struct EvalCtx *global;
