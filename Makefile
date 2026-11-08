@@ -33,7 +33,7 @@ else
 	TARGET = $(BUILD)/zynk
 endif
 
-all: folders $(TARGET) $(STATIC_LIB)
+all: folders $(TARGET) $(STATIC_LIB) release
 embed: folders $(EMBED)
 lib: folders $(TARGET_LIB)
 folders:
@@ -85,7 +85,14 @@ $(BUILD)/eval.o: $(SRC)/eval.c
 $(MAIN_OBJ): $(SRC)/zynk.c
 	$(CC) $(CFLAGS) -o $(MAIN_OBJ) $(SRC)/zynk.c
 
-.PHONY: clean
+.PHONY: clean release clrel all
+
+release:
+	cp $(TARGET) release/
+	cp $(STATIC_LIB) release/
+
+clrel:
+	rm -rf release/*
 
 clean: 
 	rm -rf build/*

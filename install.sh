@@ -9,6 +9,6 @@ echo "Installing!"
 echo "System Installation, idk"
 echo "MUST EXECUTE AS ROOT IDK"
 sudo rm -rf /bin/zynk
-sudo cp build/zynk /bin/
+sudo cp release/zynk /bin/
 
 echo "Installed"
