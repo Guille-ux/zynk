@@ -31,7 +31,8 @@ static ShellValue evalVarRef(ASTNode *ref, EvalCtx *ctx);
 static ShellValue evalArgRef(ASTNode *ref, EvalCtx *ctx);
 static ShellValue evalBinExpr(ASTNode *expr, EvalCtx *ctx);
 static ShellValue evalUnaryExpr(ASTNode *expr, EvalCtx *ctx);
-static EvalCtx *evalMembers(ASTNode *stmt, char *name, EvalCtx *ctx, char **oname);
+static EvalCtx *evalMembers(ASTNode *stmt, ShellValue base, EvalCtx *ctx, char **oname);
+static EvalCtx *evalNamedMembers(ASTNode *stmt, char *name, EvalCtx *ctx, char **oname);
 static ShellValue evalFuncCall(ASTNode *stmt, EvalCtx *ctx);
 
 // Status Code
@@ -662,7 +663,7 @@ static int evalFuncDef(ASTNode *stmt, EvalCtx *ctx) {
 
 static ShellValue evalFuncCall(ASTNode *stmt, EvalCtx *ctx) {
 	char *name;
-	EvalCtx *rctx = evalMembers(stmt->data.fn_call.member, stmt->data.fn_call.name, ctx, &name);
+	EvalCtx *rctx = evalNamedMembers(stmt->data.fn_call.member, stmt->data.fn_call.name, ctx, &name);
 	Var *var = getShellVarEntry(rctx, name);
 	if (var == NULL) return (ShellValue){.type = VAL_NONE};
 
@@ -704,44 +705,36 @@ static ShellValue evalFuncCall(ASTNode *stmt, EvalCtx *ctx) {
 	return (ShellValue){.type = VAL_NONE};
 }
 
-static EvalCtx *evalMembers(ASTNode *stmt, char *name, EvalCtx *ctx, char **oname) {
-	
+static EvalCtx *evalMembers(ASTNode *stmt, ShellValue base, EvalCtx *ctx, char **oname) {
 	if (stmt == NULL) {
-		*oname = name;
+		*oname = NULL;
 		return ctx;
 	}
-	Var *base_var = getShellVarEntrySilent(ctx, name);
 	EvalCtx *rctx = ctx;
 
-	if (base_var != NULL && base_var->val.type == VAL_DICT) {
-		
-		InstanceObj *inst = (InstanceObj*)((size_t)base_var->val.as.comodin - sizeof(GCObj));
+	if (base.type == VAL_DICT) {
+		InstanceObj *inst = (InstanceObj*)((size_t)base.as.comodin - sizeof(GCObj));
 		rctx = inst->ctx;
 	}
 
-	
-
-	
 	ASTNode *current = stmt;
-	char *rname = name;
+	char *rname = NULL;
 
 	while (current != NULL) {
-		
 		ShellValue val = evalExpr(current->data.member.expr, ctx);
 		if (val.type == VAL_STRING) {
 			rname = ref_add(val).as.str;
 		}
 
-		
 		if (current->data.member.member != NULL) {
-			Var *m_var = getShellVarEntrySilent(rctx, rname);
+			Var *m_var = rname != NULL ? getShellVarEntrySilent(rctx, rname) : NULL;
 			if (m_var != NULL && m_var->val.type == VAL_DICT) {
 				InstanceObj *inst = (InstanceObj*)((size_t)m_var->val.as.comodin - sizeof(GCObj));
 				rctx = inst->ctx;
 			}
 			current = current->data.member.member;
 		} else {
-			Var *m_var = getShellVarEntrySilent(rctx, rname);
+			Var *m_var = rname != NULL ? getShellVarEntrySilent(rctx, rname) : NULL;
             		if (m_var != NULL && m_var->val.type == VAL_DICT) {
                 		InstanceObj *inst = (InstanceObj*)((size_t)m_var->val.as.comodin - sizeof(GCObj));
                 		rctx = inst->ctx;
@@ -754,9 +747,19 @@ static EvalCtx *evalMembers(ASTNode *stmt, char *name, EvalCtx *ctx, char **onam
 	return rctx;
 }
 
+static EvalCtx *evalNamedMembers(ASTNode *stmt, char *name, EvalCtx *ctx, char **oname) {
+	if (stmt == NULL) {
+		*oname = name;
+		return ctx;
+	}
+	Var *base_var = getShellVarEntrySilent(ctx, name);
+	ShellValue base = base_var != NULL ? base_var->val : (ShellValue){.type = VAL_NONE};
+	return evalMembers(stmt, base, ctx, oname);
+}
+
 static int evalVarDel(ASTNode *stmt, EvalCtx *ctx) {
 	char *name;
-	EvalCtx *rctx = evalMembers(stmt->data.var_del.member, stmt->data.var_del.name, ctx, &name);
+	EvalCtx *rctx = evalNamedMembers(stmt->data.var_del.member, stmt->data.var_del.name, ctx, &name);
 	delShellVarEntry(rctx, name);
 	return 0;
 }
@@ -764,7 +767,7 @@ static int evalVarDel(ASTNode *stmt, EvalCtx *ctx) {
 static int evalVarDef(ASTNode *stmt, EvalCtx *ctx) {
 	ShellValue val = evalExpr(stmt->data.var_def.expr, ctx);
 	char *name;
-	EvalCtx *rctx = evalMembers(stmt->data.var_def.member, stmt->data.var_def.var_name, ctx, &name);	
+	EvalCtx *rctx = evalNamedMembers(stmt->data.var_def.member, stmt->data.var_def.var_name, ctx, &name);	
 	defShellVarEntry(rctx, name, val);
 	return 0;
 }
@@ -777,7 +780,7 @@ static int evalEcho(ASTNode *stmt, EvalCtx *ctx) {
 
 static int evalAssignment(ASTNode *stmt, EvalCtx *ctx) {
 	char *name;
-	EvalCtx *rctx = evalMembers(stmt->data.assignment.member, stmt->data.assignment.var_name, ctx, &name);
+	EvalCtx *rctx = evalNamedMembers(stmt->data.assignment.member, stmt->data.assignment.var_name, ctx, &name);
 	ShellValue val = evalExpr(stmt->data.assignment.expr, ctx);
 	setShellVarEntry(rctx, name, val);
 	return EVAL_OK;
@@ -893,7 +896,7 @@ static ShellValue evalStr(ASTNode *str) {
 
 static ShellValue evalVarRef(ASTNode *ref, EvalCtx *ctx) {
 	char *name;
-	EvalCtx *rctx = evalMembers(ref->data.var_ref.member, ref->data.var_ref.name, ctx, &name);
+	EvalCtx *rctx = evalNamedMembers(ref->data.var_ref.member, ref->data.var_ref.name, ctx, &name);
 	Var *var_entry = getShellVarEntry(rctx, name);	
 	if (var_entry==NULL) {
 		return (ShellValue){.type=VAL_NONE};
@@ -902,7 +905,14 @@ static ShellValue evalVarRef(ASTNode *ref, EvalCtx *ctx) {
 }
 // TODO: hacer q los argumentos acepten miembros
 static ShellValue evalArgRef(ASTNode *ref, EvalCtx *ctx) {
-	return ref_add(getShellArg(ctx, ref->data.arg_ref.num));
+	ShellValue base = ref_add(getShellArg(ctx, ref->data.arg_ref.num));
+	if (ref->data.arg_ref.member == NULL) return base;
+	char *name;
+	EvalCtx *rctx = evalMembers(ref->data.arg_ref.member, base, ctx, &name);
+	if (name == NULL) return (ShellValue){.type = VAL_NONE};
+	Var *var_entry = getShellVarEntry(rctx, name);
+	if (var_entry == NULL) return (ShellValue){.type = VAL_NONE};
+	return ref_add(var_entry->val);
 }
 
 static ShellValue evalUnaryExpr(ASTNode *expr, EvalCtx *ctx) {
