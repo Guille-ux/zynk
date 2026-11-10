@@ -55,6 +55,8 @@ static int evalVarDel(ASTNode *stmt, EvalCtx *ctx);
 #define EVAL_RET 3
 #define EVAL_EXIT 4
 
+#define EVAL_CTX_BASE_CAP 16
+
 EvalCtx *global;
 GCObj *obj_pool;
 int cycles=0;
@@ -327,8 +329,8 @@ EvalCtx *newShellCtx() {
 	}
 	memset((void*)ctx, 0, sizeof(EvalCtx));
 	ctx->global=global;
-	ctx->var_cap=16;
-	ctx->argc=16;
+	ctx->var_cap=EVAL_CTX_BASE_CAP;
+	ctx->argc=EVAL_CTX_BASE_CAP;
 	ctx->var_table = (Var*)kmalloc(sizeof(Var)*ctx->var_cap);
 	ctx->argv = (Var*)kmalloc(sizeof(Var)*ctx->argc);
 	memset(ctx->var_table, 0, ctx->var_cap * sizeof(Var));

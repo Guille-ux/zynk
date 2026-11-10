@@ -7,6 +7,7 @@
 #include "../include/parser.h"
 #include <stdlib.h>
 #include <dirent.h>
+#include <math.h>
 
 ShellValue native_array_constructor(int argc, ShellValue *args);
 
@@ -78,6 +79,23 @@ void free_tracked_memory() {
 #else
     #include <unistd.h>
 #endif
+
+ShellValue native_sqrt(int argc, ShellValue *args) {
+	if (argc < 1) return newNumVal(-1);
+	return newNumVal(sqrt(args[0].as.num));
+}
+ShellValue native_pow(int argc, ShellValue *args) {
+	if (argc < 2) return newNumVal(-1);
+	return newNumVal(pow(args[0].as.num, args[1].as.num));
+}
+ShellValue native_abs(int argc, ShellValue *args) {
+	if (argc < 1) return newNumVal(-1);
+	return newNumVal(fabs(args[0].as.num));
+}
+ShellValue native_ln(int argc, ShellValue *args) {
+	if (argc < 1) return newNumVal(-1);
+	return newNumVal(log(args[0].as.num));
+}
 
 ShellValue native_exists(int argc, ShellValue *args) {
 	if (argc < 2) return newNumVal(-1);
@@ -662,4 +680,8 @@ void register_globals(EvalCtx *ctx) {
 	register_cfunc(ctx, "sleep", native_sleep);
 	register_cfunc(ctx, "slice", native_slice);
 	register_cfunc(ctx, "exists", native_exists);
+	register_cfunc(ctx, "sqrt", native_sqrt);
+	register_cfunc(ctx, "abs", native_abs);
+	register_cfunc(ctx, "pow", native_pow);
+	register_cfunc(ctx, "ln", native_ln);
 }

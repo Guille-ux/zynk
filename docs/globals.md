@@ -1,6 +1,14 @@
 ## 🕒 Funciones de Sistema y Utilidades
 
-### `exists(key dict)` devuelve 1 si la clave existe en el diccionario en caso contrario devuelve 0
+### `sqrt(num)`: devuelve la raíz cuadrada
+
+### `abs(num)`: devuelve el valor absoluto
+
+### `pow(num exp)`: devuelve el resultado de elevar `num` a `exp`
+
+### `ln(num)`: logaritmo neperiano de `num`
+
+### `exists(key dict)`: devuelve 1 si la clave existe en el diccionario en caso contrario devuelve 0
 
 ### `sleep(time)`: pone el programa dormir durante la cantidad de tiempo indicada (en milisegundos)
 
