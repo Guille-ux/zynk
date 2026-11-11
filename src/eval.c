@@ -770,7 +770,7 @@ static int evalVarDef(ASTNode *stmt, EvalCtx *ctx) {
 	ShellValue val = evalExpr(stmt->data.var_def.expr, ctx);
 	char *name;
 	EvalCtx *rctx = evalNamedMembers(stmt->data.var_def.member, stmt->data.var_def.var_name, ctx, &name);	
-	defShellVarEntry(rctx, name, val);
+	defShellVarEntry(rctx, newStrVal(name).as.str, val);
 	return 0;
 }
 
