@@ -736,6 +736,7 @@ static EvalCtx *evalMembers(ASTNode *stmt, ShellValue base, EvalCtx *ctx, char *
 			}
 			current = current->data.member.member;
 		} else {
+			break;
 			Var *m_var = rname != NULL ? getShellVarEntrySilent(rctx, rname) : NULL;
             		if (m_var != NULL && m_var->val.type == VAL_DICT) {
                 		InstanceObj *inst = (InstanceObj*)((size_t)m_var->val.as.comodin - sizeof(GCObj));
