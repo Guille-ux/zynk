@@ -11,9 +11,11 @@ int load_plugins(const char *file, EvalCtx *ctx);
 
 
 void register_cfunc(EvalCtx *ctx, char *name, NativeFunc func);
+void rregister_cfunc(EvalCtx *ctx, char *name, CFunc *func);
 void register_class(EvalCtx *ctx, char *name, EvalCtx *class);
 void register_globals(EvalCtx *ctx);
-
+void initFuncStorage();
+void cleanFuncStorage();
 
 // funciones a registrar
 ShellValue len(int argc, ShellValue *args);

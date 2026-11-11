@@ -213,6 +213,7 @@ uint32_t zhash(char *name); // aham, a futuro
 void printVal(ShellValue val);
 ShellValue ref_add(ShellValue val);
 void ref_del(ShellValue val);
+void sref_del(void *ptr);
 ShellValue evalExpr(ASTNode *expr, EvalCtx *ctx);
 int eval(ASTNode *ast, EvalCtx *ctx);
 bool isTruly(ShellValue val);

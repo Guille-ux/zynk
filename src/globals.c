@@ -448,8 +448,9 @@ ShellValue native_include(int argc, ShellValue *args) {
 
 
 int how_many=0;
+int current_cap = MAX_NATIVE_FUNCS;
 
-CFunc natives[MAX_NATIVE_FUNCS];
+CFunc *natives;
 
 ShellValue native_import(int argc, ShellValue *args) {
 	if (argc < 1) return newNumVal(0);
@@ -592,6 +593,11 @@ ShellValue native_array_len(int argc, ShellValue *args) {
     return newNumVal(arr->size);
 }
 
+static CFunc prefab_fn[3] = {
+    { .func = native_array_push },
+    { .func = native_array_pop },
+    { .func = native_array_len }
+};
 
 ShellValue native_array_constructor(int argc, ShellValue *args) {
     
@@ -602,9 +608,9 @@ ShellValue native_array_constructor(int argc, ShellValue *args) {
     defShellVarEntry(instance_ctx, "data", arr_val);
 
     
-    register_cfunc(instance_ctx, "push", native_array_push);
-    register_cfunc(instance_ctx, "pop", native_array_pop);
-    register_cfunc(instance_ctx, "len", native_array_len);
+    rregister_cfunc(instance_ctx, "push", &prefab_fn[0]);
+    rregister_cfunc(instance_ctx, "pop", &prefab_fn[1]);
+    rregister_cfunc(instance_ctx, "len", &prefab_fn[2]);
 
 
     return newInstanceVal(instance_ctx);
@@ -636,14 +642,33 @@ ShellValue zindex(int argc, ShellValue *args) {
 void register_cfunc(EvalCtx *ctx, char *name, NativeFunc func) {
 	ShellValue val;
 	val.type = VAL_CFUNC;
+	if (how_many >= current_cap) {
+		current_cap *= 2;
+		natives = realloc(natives, current_cap*sizeof(CFunc));
+	}
 	CFunc *var=&natives[how_many++];
 	var->func = func;
 	val.as.c_func = var;
 	defShellVarEntry(ctx, name, val);
 }
 
+void rregister_cfunc(EvalCtx *ctx, char *name, CFunc *func) {
+	ShellValue val;
+	val.type = VAL_CFUNC;
+	val.as.c_func = func;
+	defShellVarEntry(ctx, name, val);
+}
+
 void register_class(EvalCtx *ctx, char *name, EvalCtx *class) {	
 	defShellVarEntry(ctx, name, newInstanceVal(class));
+}
+
+void initFuncStorage() {
+	natives = malloc(current_cap*sizeof(CFunc));
+}
+
+void cleanFuncStorage() {
+	free(natives);
 }
 
 void register_globals(EvalCtx *ctx) {

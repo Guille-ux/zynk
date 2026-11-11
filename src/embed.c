@@ -14,7 +14,7 @@ int main(int argc, char *argv[]) {
 	EvalCtx *global = newShellCtx();
 
 	set_global(global);
-
+	initFuncStorage();
 	register_globals(global);
 	addShellArg(global, newNumVal((double)argc));
 	for (int i=0;i<argc;i++) {
@@ -62,6 +62,7 @@ int main(int argc, char *argv[]) {
 	killShellCtx(global_env);
 
 	cleanAll();
+	cleanFuncStorage();
 	//afree();
 	return 0;
 }

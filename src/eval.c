@@ -156,33 +156,42 @@ ShellValue newVMFuncVal(size_t ip, EvalCtx *closure_ctx) {
 }
 
 void growArray(Array *array) {
-	ShellValue *new_items = kmalloc(array->capacity*2*sizeof(ShellValue));
-	memcpy(new_items, array->items, array->size*sizeof(ShellValue));
-	array->capacity *= 2;
-	kfree(array->items);
-	array->items = new_items;
+    if (array == NULL) return;
+
+    int new_capacity = (array->capacity == 0) ? 8 : array->capacity * 2;
+    ShellValue *new_items = realloc(array->items, new_capacity*sizeof(ShellValue));
+    
+    array->items = new_items;
+    array->capacity = new_capacity;
 }
 
 void zynk_gc() {
 	GCObj *current = obj_pool;
+	int i = 0;
 	while (current!=NULL) {
 		if (current->obj.refc==0) {
 			GCObj *next = current->next;
 			delObj(current);
 			current = next;
 		} else {
+			//printf("References -> %d\n", current->obj.refc);
 			current = current->next;
 		}
+		i++;
 	}
+	//printf("n objects: %d\n", i);
 }
 
 void zynk_clean() {
 	GCObj *current = obj_pool;
+	int i = 0;
 	while (current!=NULL) {
 		GCObj *next = current->next;
 		delObj(current);
 		current = next;
+		i++;
 	}
+	//printf("n objects: %d\n", i);
 }
 
 bool isHeap(void *ptr) {
@@ -311,6 +320,8 @@ void midKillShellCtx(EvalCtx *ctx) {
 	for (size_t i=0;i<ctx->var_cap;i++) {
 		if (ctx->var_table[i].is_set && ctx->var_table[i].name!=NULL && ctx->var_table[i].val.as.comodin!=NULL && ctx->var_table[i].val.as.comodin!=ctx->ret.as.comodin) {
 			ref_del(ctx->var_table[i].val);
+			ctx->var_table[i].is_set = false;
+			ctx->var_table[i].name = NULL;
 		}
 	}
 	for (size_t i=0;i<ctx->arg_used;i++) {
@@ -362,9 +373,11 @@ void killShellCtx(EvalCtx *ctx) {
 
 	for (size_t i=0;i<ctx->var_cap;i++) {
 		if (ctx->var_table[i].is_set) {
-			ref_del(*(ShellValue*)((size_t)ctx->var_table[i].name-sizeof(ValType)));
+			sref_del(ctx->var_table[i].name);
 			if (ctx->var_table[i].val.as.comodin!=ctx->ret.as.comodin) {
 				ref_del(ctx->var_table[i].val);
+				ctx->var_table[i].is_set = false;
+				ctx->var_table[i].name = NULL;
 			}
 		}
 	}
@@ -547,6 +560,24 @@ ShellValue ref_add(ShellValue val) {
 		data->refc++;
 	}	
 	return val;
+}
+
+void sref_del(void *ptr) {
+	
+	if (!isHeap(ptr)) return;
+	ShellValue val = *(ShellValue*)((size_t)ptr - sizeof(ValType));
+	if (val.type==VAL_STRING ||
+	    val.type==VAL_FUNC ||
+	    val.type==VAL_DICT ||
+	    val.type==VAL_ARRAY ||
+	    val.type==VAL_OBJ) {
+		Obj *data = (Obj*)((size_t)val.as.comodin - sizeof(Obj));	
+		if (data->refc != 0) {
+			data->refc--;
+		} else if (!lock) {
+			zynk_gc();
+		}
+	}	
 }
 
 void ref_del(ShellValue val) {
@@ -771,7 +802,7 @@ static int evalVarDef(ASTNode *stmt, EvalCtx *ctx) {
 	ShellValue val = evalExpr(stmt->data.var_def.expr, ctx);
 	char *name;
 	EvalCtx *rctx = evalNamedMembers(stmt->data.var_def.member, stmt->data.var_def.var_name, ctx, &name);	
-	defShellVarEntry(rctx, newStrVal(name).as.str, val);
+	defShellVarEntry(rctx, name, val);
 	return 0;
 }
 
