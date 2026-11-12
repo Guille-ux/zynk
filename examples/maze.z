@@ -1,0 +1,143 @@
+let height = 8
+let width = 10
+
+let maze = "###########S...#...##.#..#.#.##.#....#.##.####.#.##......#E#####################"
+
+fn getMazeRepr {
+	let map_layout = $0
+	let output_str = "\0"
+
+	for (let i = 0; i < len(map_layout); i = i + 1) do
+		output_str = output_str + index(map_layout i)
+		if ((i + 1) % width) == 0 then
+			output_str = output_str + "\n"
+		fi
+	done
+
+	return output_str
+}
+
+fn getChr {
+	let map_layout = $0
+	let x = $1
+	let y = $2
+	let char_at = index(map_layout x + y * width)
+	return char_at
+}
+
+echo getMazeRepr(maze)
+
+class Pos {
+	del ret
+	let x = 0
+	let y = 0
+}
+
+class Path {
+	del ret
+	let n = 0
+	let c = 0
+}
+
+fn getDirs {
+	let pos = $0
+	let map_layout = $1
+	
+	let neighbors = Array()
+
+	if getChr(map_layout pos:x pos:y-1) == "." or getChr(map_layout pos:x pos:y-1) == "E" then
+		let new_pos = Pos()
+		new_pos:x = pos:x
+		new_pos:y = pos:y - 1
+		neighbors:push(neighbors new_pos)
+		del new_pos
+	fi
+	
+	if getChr(map_layout pos:x-1 pos:y) == "." or getChr(map_layout pos:x-1 pos:y) == "E" then
+		let new_pos = Pos()
+		new_pos:x = pos:x - 1
+		new_pos:y = pos:y
+		neighbors:push(neighbors new_pos)
+		del new_pos
+	fi
+
+	if getChr(map_layout pos:x pos:y+1) == "." or getChr(map_layout pos:x pos:y+1) == "E" then
+		let new_pos = Pos()
+		new_pos:x = pos:x
+		new_pos:y = pos:y + 1
+		neighbors:push(neighbors new_pos)
+		del new_pos
+	fi
+
+	if getChr(map_layout pos:x+1 pos:y) == "." or getChr(map_layout pos:x+1 pos:y) == "E" then
+		let new_pos = Pos()
+		new_pos:x = pos:x + 1
+		new_pos:y = pos:y
+		neighbors:push(neighbors new_pos)
+		del new_pos
+	fi
+
+	return neighbors
+}
+
+fn solveMaze {
+	let map_layout = $0
+	let start_pos = $1
+	let default_ret = 0
+
+	let path_stack = Array()
+	let initial_path = Path()
+	initial_path:n = 0
+	initial_path:c = start_pos
+	path_stack:push(path_stack initial_path)
+
+	let current_path
+	let neighbor_list
+	let i
+	let next_path
+	let visited_history = Array()
+	let is_visited = 0
+	let k
+	let prev_pos
+
+	do {
+		current_path = index(path_stack:data path_stack:len(path_stack) - 1)
+		visited_history:push(visited_history current_path:c)
+		path_stack:pop(path_stack)
+
+		neighbor_list = getDirs(current_path:c map_layout)
+
+		for (i = 0; i < neighbor_list:len(neighbor_list); i = i + 1) do
+			next_path = Path()
+			next_path:n = current_path:n + 1
+			next_path:c = index(neighbor_list:data i)
+
+			if getChr(map_layout next_path:c:x next_path:c:y) == "E" then
+				echo "Path Found!"
+				echo "Cost: " + next_path:n
+				return next_path:n
+			fi
+
+			for (k = 0; k < visited_history:len(visited_history); k = k + 1) do
+				prev_pos = index(visited_history:data k)
+				if next_path:c:x == prev_pos:x and next_path:c:y == prev_pos:y then
+					is_visited = 1
+					break
+				fi
+			done
+
+			if !is_visited then
+				path_stack:push(path_stack next_path)
+			fi
+			is_visited = 0
+		done
+	} while path_stack:len(path_stack) > 0
+
+	return default_ret
+}
+
+let start = Pos()
+start:x = 1
+start:y = 1
+
+solveMaze(maze start)
