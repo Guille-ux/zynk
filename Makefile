@@ -88,6 +88,7 @@ $(MAIN_OBJ): $(SRC)/zynk.c
 .PHONY: clean release clrel all
 
 release:
+	mkdir -p release
 	cp $(TARGET) release/
 	cp $(STATIC_LIB) release/
 
