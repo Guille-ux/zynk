@@ -551,50 +551,47 @@ void setShellVarEntry(EvalCtx *ctx, char *name, ShellValue val) {
 
 ShellValue ref_add(ShellValue val) {
 	if (!isHeap(val.as.comodin)) return val;
-	if (val.type==VAL_STRING ||
-	    val.type==VAL_FUNC ||
-	    val.type==VAL_DICT ||
-	    val.type==VAL_ARRAY ||
-	    val.type==VAL_OBJ) {
-		Obj *data = (Obj*)((size_t)val.as.comodin - sizeof(Obj));
-		data->refc++;
-	}	
+
+	Obj *data = (Obj*)((size_t)val.as.comodin - sizeof(Obj));
+	data->refc++;
+
 	return val;
+}
+
+void *sref_add(void *ptr) {
+	if (!isHeap(ptr)) return ptr;
+
+	Obj *data = (Obj*)((size_t)ptr - sizeof(Obj));
+	data->refc++;
+
+	return ptr;
 }
 
 void sref_del(void *ptr) {
 	
 	if (!isHeap(ptr)) return;
-	ShellValue val = *(ShellValue*)((size_t)ptr - sizeof(ValType));
-	if (val.type==VAL_STRING ||
-	    val.type==VAL_FUNC ||
-	    val.type==VAL_DICT ||
-	    val.type==VAL_ARRAY ||
-	    val.type==VAL_OBJ) {
-		Obj *data = (Obj*)((size_t)val.as.comodin - sizeof(Obj));	
-		if (data->refc != 0) {
-			data->refc--;
-		} else if (!lock) {
-			zynk_gc();
-		}
-	}	
+	
+	
+	Obj *data = (Obj*)((size_t)ptr - sizeof(Obj));	
+	if (data->refc != 0) {
+		data->refc--;
+	} else if (!lock) {
+		zynk_gc();
+	}
+
 }
 
 void ref_del(ShellValue val) {
 	
 	if (!isHeap(val.as.comodin)) return;
-	if (val.type==VAL_STRING ||
-	    val.type==VAL_FUNC ||
-	    val.type==VAL_DICT ||
-	    val.type==VAL_ARRAY ||
-	    val.type==VAL_OBJ) {
-		Obj *data = (Obj*)((size_t)val.as.comodin - sizeof(Obj));	
-		if (data->refc != 0) {
-			data->refc--;
-		} else if (!lock) {
-			zynk_gc();
-		}
-	}	
+	
+	Obj *data = (Obj*)((size_t)val.as.comodin - sizeof(Obj));	
+	if (data->refc != 0) {
+		data->refc--;
+	} else if (!lock) {
+		zynk_gc();
+	}
+	
 }
 
 void addShellArg(EvalCtx *ctx, ShellValue val) {
@@ -756,7 +753,7 @@ static EvalCtx *evalMembers(ASTNode *stmt, ShellValue base, EvalCtx *ctx, char *
 	while (current != NULL) {
 		ShellValue val = evalExpr(current->data.member.expr, ctx);
 		if (val.type == VAL_STRING) {
-			rname = ref_add(val).as.str;
+			rname = val.as.str;
 		}
 
 		if (current->data.member.member != NULL) {
@@ -802,7 +799,7 @@ static int evalVarDef(ASTNode *stmt, EvalCtx *ctx) {
 	ShellValue val = evalExpr(stmt->data.var_def.expr, ctx);
 	char *name;
 	EvalCtx *rctx = evalNamedMembers(stmt->data.var_def.member, stmt->data.var_def.var_name, ctx, &name);	
-	defShellVarEntry(rctx, name, val);
+	defShellVarEntry(rctx, sref_add(name), val);
 	return 0;
 }
 
