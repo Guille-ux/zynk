@@ -80,6 +80,30 @@ void free_tracked_memory() {
     #include <unistd.h>
 #endif
 
+
+ShellValue native_set(int argc, ShellValue *args) {
+	if (argc < 3) return newNumVal(0);
+
+	if (args[0].type==VAL_STRING) {
+		args[0].as.str[(int)args[1].as.num]=args[2].as.str[0];
+	} else if (args[0].type==VAL_ARRAY) {
+		args[0].as.arr->items[(int)args[1].as.num]=args[2];
+	}
+	
+
+	return newNumVal(1);
+}
+
+ShellValue native_clean(int argc, ShellValue *args) {
+	free_tracked_memory();
+	init_tracker();
+	return newNumVal(1);
+}
+
+
+
+
+
 ShellValue native_sqrt(int argc, ShellValue *args) {
 	if (argc < 1) return newNumVal(-1);
 	return newNumVal(sqrt(args[0].as.num));
@@ -447,10 +471,6 @@ ShellValue native_include(int argc, ShellValue *args) {
 
 
 
-int how_many=0;
-int current_cap = MAX_NATIVE_FUNCS;
-
-CFunc *natives;
 
 ShellValue native_import(int argc, ShellValue *args) {
 	if (argc < 1) return newNumVal(0);
@@ -491,129 +511,142 @@ void cleanAll() {
 }
 
 ShellValue native_write(int argc, ShellValue *args) {
-    if (argc < 2 || args[0].type != VAL_STRING || args[1].type != VAL_STRING) {
-        return newNumVal(0);
-    }
+	if (argc < 2 || args[0].type != VAL_STRING || args[1].type != VAL_STRING) {
+		return newNumVal(0);
+	}
     
-    FILE *f = fopen(args[0].as.str, "w");
-    if (!f) return newNumVal(0);
+	FILE *f = fopen(args[0].as.str, "w");
+	if (!f) return newNumVal(0);
     
-    fputs(args[1].as.str, f);
-    fclose(f);
-    return newNumVal(1); // Éxito, YUPIIII
+	fputs(args[1].as.str, f);
+	fclose(f);
+	return newNumVal(1); // Éxito, YUPIIII
 }
 
 // read("algo.txt")
 ShellValue native_read(int argc, ShellValue *args) {
-    if (argc < 1 || args[0].type != VAL_STRING) {
-        return newStrVal("");
-    }
+	if (argc < 1 || args[0].type != VAL_STRING) {
+		return newStrVal("");
+	}
     
-    FILE *f = fopen(args[0].as.str, "r");
-    if (!f) return newStrVal("");
+	FILE *f = fopen(args[0].as.str, "r");
+	if (!f) return newStrVal("");
 
-    // a ver, en plan solo asignar lo q necesito
-    fseek(f, 0, SEEK_END);
-    long len = ftell(f);
-    fseek(f, 0, SEEK_SET);
+	// a ver, en plan solo asignar lo q necesito
+	fseek(f, 0, SEEK_END);
+	long len = ftell(f);
+	fseek(f, 0, SEEK_SET);
 
-    char *buf = kmalloc(len + 1);
-    if (!buf) {
-        fclose(f);
-        return newStrVal("");
-    }
+	char *buf = kmalloc(len + 1);
+	if (!buf) {
+		fclose(f);
+		return newStrVal("");
+	}
     
-    fread(buf, 1, len, f);
-    buf[len] = '\0';
-    fclose(f);
+	fread(buf, 1, len, f);
+	buf[len] = '\0';
+	fclose(f);
 
-    ShellValue val = newStrVal(buf);
-    kfree(buf);
-    return val;
+	ShellValue val = newStrVal(buf);
+	kfree(buf);
+	return val;
 }
 
 ShellValue native_input(int argc, ShellValue *args) {
-    char buffer[256];
-    if (argc > 0 && args[0].type == VAL_STRING) {
-        kprintf("%s", args[0].as.str); 
-    }
+	char buffer[256];
+	if (argc > 0 && args[0].type == VAL_STRING) {
+		kprintf("%s", args[0].as.str); 
+	}
     
     
-    if (fgets(buffer, sizeof(buffer), stdin) != NULL) {
+	if (fgets(buffer, sizeof(buffer), stdin) != NULL) {
         
-        size_t len = strlen(buffer);
-        if (len > 0 && buffer[len - 1] == '\n') {
-            buffer[len - 1] = '\0';
-        }
-        return newStrVal(buffer);
-    }
-    return newStrVal("NULL");
+		size_t len = strlen(buffer);
+		if (len > 0 && buffer[len - 1] == '\n') {
+			buffer[len - 1] = '\0';
+		}
+		return newStrVal(buffer);
+	}
+	return newStrVal("NULL");
 }
 
 ShellValue native_array_push(int argc, ShellValue *args) {
     
-    if (argc < 2) return newNumVal(0);
+	if (argc < 2) return newNumVal(0);
     
-    InstanceObj *inst = (InstanceObj*)((size_t)args[0].as.comodin - sizeof(GCObj));
+	InstanceObj *inst = (InstanceObj*)((size_t)args[0].as.comodin - sizeof(GCObj));
 
 
-    EvalCtx *inst_ctx = inst->ctx;
+	EvalCtx *inst_ctx = inst->ctx;
 
-    ShellValue val = (getShellVarEntrySilent(inst_ctx, "data"))->val;
-    Array *arr = val.as.arr;
-    if (arr->size >= arr->capacity) growArray(arr);
-    arr->items[arr->size++]=ref_add(args[1]);
-    return newNumVal(0);
+	ShellValue val = (getShellVarEntrySilent(inst_ctx, "data"))->val;
+	Array *arr = val.as.arr;
+	if (arr->size >= arr->capacity) growArray(arr);
+	arr->items[arr->size++]=ref_add(args[1]);
+	return newNumVal(0);
 }
 
 ShellValue native_array_pop(int argc, ShellValue *args) {
     
-    if (argc < 1) return newNumVal(0);
-    InstanceObj *inst = (InstanceObj*)((size_t)args[0].as.comodin - sizeof(GCObj));
+	if (argc < 1) return newNumVal(0);
+	InstanceObj *inst = (InstanceObj*)((size_t)args[0].as.comodin - sizeof(GCObj));
 
 
-    EvalCtx *inst_ctx = inst->ctx;
+	EvalCtx *inst_ctx = inst->ctx;
 
-    ShellValue val = (getShellVarEntrySilent(inst_ctx, "data"))->val; 
-    Array *arr = val.as.arr;
-    arr->size--;
-    ref_del(arr->items[arr->size]);
-    return newNumVal(0);
+	ShellValue val = (getShellVarEntrySilent(inst_ctx, "data"))->val; 
+	Array *arr = val.as.arr;
+	arr->size--;
+	ref_del(arr->items[arr->size]);
+	return newNumVal(0);
 }
 
 ShellValue native_array_len(int argc, ShellValue *args) { 
-    if (argc < 1) return newNumVal(0);
-    InstanceObj *inst = (InstanceObj*)((size_t)args[0].as.comodin - sizeof(GCObj));
+	if (argc < 1) return newNumVal(0);
+	InstanceObj *inst = (InstanceObj*)((size_t)args[0].as.comodin - sizeof(GCObj));
 
 
-    EvalCtx *inst_ctx = inst->ctx;
+	EvalCtx *inst_ctx = inst->ctx;
 
-    ShellValue val = (getShellVarEntrySilent(inst_ctx, "data"))->val; 
-    Array *arr = val.as.arr;
-    return newNumVal(arr->size);
+	ShellValue val = (getShellVarEntrySilent(inst_ctx, "data"))->val; 
+	Array *arr = val.as.arr;
+	return newNumVal(arr->size);
 }
 
-static CFunc prefab_fn[3] = {
-    { .func = native_array_push },
-    { .func = native_array_pop },
-    { .func = native_array_len }
-};
+ShellValue native_array_swap(int argc, ShellValue *args) {
+	if (argc < 3) return newNumVal(0);
+    
+	InstanceObj *inst = (InstanceObj*)((size_t)args[0].as.comodin - sizeof(GCObj));
+
+
+	EvalCtx *inst_ctx = inst->ctx;
+
+	ShellValue val = (getShellVarEntrySilent(inst_ctx, "data"))->val;
+	Array *arr = val.as.arr;
+	
+	ShellValue tmp = arr->items[(int)args[1].as.num];
+
+	arr->items[(int)args[1].as.num] = arr->items[(int)args[2].as.num];
+	arr->items[(int)args[2].as.num] = tmp;
+
+	return newNumVal(0);
+}
 
 ShellValue native_array_constructor(int argc, ShellValue *args) {
     
-    EvalCtx *instance_ctx = newShellCtx();
+	EvalCtx *instance_ctx = newShellCtx();
     
-    ShellValue arr_val = newArrayVal(); 
+	ShellValue arr_val = newArrayVal(); 
     
-    defShellVarEntry(instance_ctx, "data", arr_val);
+	defShellVarEntry(instance_ctx, "data", arr_val);
 
     
-    rregister_cfunc(instance_ctx, "push", &prefab_fn[0]);
-    rregister_cfunc(instance_ctx, "pop", &prefab_fn[1]);
-    rregister_cfunc(instance_ctx, "len", &prefab_fn[2]);
+	register_cfunc(instance_ctx, "push", native_array_push);
+	register_cfunc(instance_ctx, "pop", native_array_pop);
+	register_cfunc(instance_ctx, "len", native_array_len);
+	register_cfunc(instance_ctx, "swap", native_array_swap);
 
-
-    return newInstanceVal(instance_ctx);
+	return newInstanceVal(instance_ctx);
 }
 
 ShellValue len(int argc, ShellValue *args) {
@@ -642,19 +675,6 @@ ShellValue zindex(int argc, ShellValue *args) {
 void register_cfunc(EvalCtx *ctx, char *name, NativeFunc func) {
 	ShellValue val;
 	val.type = VAL_CFUNC;
-	if (how_many >= current_cap) {
-		current_cap *= 2;
-		natives = realloc(natives, current_cap*sizeof(CFunc));
-	}
-	CFunc *var=&natives[how_many++];
-	var->func = func;
-	val.as.c_func = var;
-	defShellVarEntry(ctx, name, val);
-}
-
-void rregister_cfunc(EvalCtx *ctx, char *name, CFunc *func) {
-	ShellValue val;
-	val.type = VAL_CFUNC;
 	val.as.c_func = func;
 	defShellVarEntry(ctx, name, val);
 }
@@ -663,13 +683,6 @@ void register_class(EvalCtx *ctx, char *name, EvalCtx *class) {
 	defShellVarEntry(ctx, name, newInstanceVal(class));
 }
 
-void initFuncStorage() {
-	natives = malloc(current_cap*sizeof(CFunc));
-}
-
-void cleanFuncStorage() {
-	free(natives);
-}
 
 void register_globals(EvalCtx *ctx) {
 	register_cfunc(ctx, "len", len);
@@ -709,4 +722,6 @@ void register_globals(EvalCtx *ctx) {
 	register_cfunc(ctx, "abs", native_abs);
 	register_cfunc(ctx, "pow", native_pow);
 	register_cfunc(ctx, "ln", native_ln);
+	register_cfunc(ctx, "clean", native_clean);
+	register_cfunc(ctx, "set", native_set);
 }

@@ -709,13 +709,13 @@ static ShellValue evalFuncCall(ASTNode *stmt, EvalCtx *ctx) {
 		midKillShellCtx(fctx);
 		return ret;
 	} else if (var->val.type == VAL_CFUNC) {
-		CFunc *func = var->val.as.c_func;
+		CFunc func = var->val.as.c_func;
 		ShellValue args[stmt->data.fn_call.argc];
 		for (int i=0; i<stmt->data.fn_call.argc; i++) {
 			args[i]=evalExpr(stmt->data.fn_call.args[i], ctx);
 		}
 
-		ShellValue ret = func->func(stmt->data.fn_call.argc, args);
+		ShellValue ret = func(stmt->data.fn_call.argc, args);
 		return ret;
 	} else if (var->val.type == VAL_DICT) {
 		

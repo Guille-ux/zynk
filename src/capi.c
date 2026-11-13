@@ -10,7 +10,7 @@ int init() {
 	init_tracker();
 	EvalCtx *global = newShellCtx();
 	set_global(global);
-	initFuncStorage();
+
 	return 0;
 }
 
@@ -18,7 +18,7 @@ int killZynk() {
 	killShellCtx(get_global());
 	zynk_clean();
 	cleanAll();
-	cleanFuncStorage();
+
 	return 0;
 }
 

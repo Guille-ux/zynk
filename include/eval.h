@@ -61,8 +61,6 @@ typedef struct {
 	uint8_t info[];
 } RealObj;
 
-
-
 typedef struct ShellValue {
 	ValType type;
 	union {
@@ -70,7 +68,7 @@ typedef struct ShellValue {
 		double num;
 		char *str;
 		void *comodin;
-		struct CFunc *c_func;
+		void  *c_func; // now is like comodin
 		struct ZFunc *func;
 		struct Object *obj;
 		struct Array *arr;
@@ -79,6 +77,12 @@ typedef struct ShellValue {
 } ShellValue;
 
 typedef ShellValue (*NativeFunc)(int argc, ShellValue *args);
+
+typedef NativeFunc CFunc;
+
+
+
+
 
 typedef struct ArrayObj {
     GCObj data;
@@ -93,9 +97,7 @@ typedef struct Array {
 	ShellValue *items;
 } Array;
 
-typedef struct CFunc {
-	NativeFunc func;
-} CFunc;
+
 
 typedef struct {
 	Obj data;

@@ -1,5 +1,9 @@
 ## 🕒 Funciones de Sistema y Utilidades
 
+### `set(obj index val)`: pone cierto valor en cierto indice de un objeto Array (array:data) o una cadena de texto
+
+### `clean()`: limpia toda la memoria excepto la del programa padre
+
 ### `sqrt(num)`: devuelve la raíz cuadrada
 
 ### `abs(num)`: devuelve el valor absoluto
@@ -196,15 +200,15 @@
 
 
 * **Métodos del objeto Array devuelto:**
-* `push(val)`: Añade un elemento al final del array dinámico.
+* `push(arr val)`: Añade un elemento al final del array dinámico.
 
 
-* `pop()`: elimina el último elemento del array.
+* `pop(arr)`: elimina el último elemento del array.
 
 
-* `len()`: Devuelve el tamaño actual de elementos almacenados.
+* `len(arr)`: Devuelve el tamaño actual de elementos almacenados.
 
-
+* `swap(arr index0 index1)`: Intercambia los indices indicados del Array
 
 
 * **Retorno:** Una instancia de objeto Zynk que actúa como un array dinámico.
