@@ -1,0 +1,102 @@
+#
+# Csv Parser
+#
+
+
+class Csv {
+	let line_count = 0
+	let lines = Array()
+	fn swapLine {
+		let x = $0
+		let y = $1
+		lines:swap(lines x y)
+	}
+	fn swapRow {
+		let x = $0
+
+		let y = $1
+		let z = $2
+
+		let a = index(lines:data x)
+
+		a:swap(a y z)
+	}
+	fn delLine {
+		lines:pop(lines)
+	}
+	fn addLine {
+		lines:push(lines Array())
+	}
+	fn addRow {
+		let x = $0
+		let a = index(lines:data x)
+
+		a:push(a Array())
+	}
+	fn delRow {
+		let x = $0
+		let a = index(lines:data x)
+		a:pop(a)
+	}
+	fn put {
+		let x = $0
+		let y = $1
+		let val = $2
+
+		let a = index(lines:data x)
+		set(a:data y val)
+	}
+	fn get {
+		let x = $0
+		let y = $1
+
+		let a = index(lines:data x)
+		return index(a:data y)
+	}
+	fn loadFile {
+		let file = $0
+		let content = read(file)
+		let curArr = Array()
+		let curTxt = "\0"
+		for (let i=0;i<len(content);i=i+1) do
+			if index(content i)=="," then
+				curArr:push(curArr curTxt)
+				curTxt = "\0"
+			else if index(content i)=="\n" then
+				curArr:push(curArr curTxt)
+				curTxt = "\0"
+				lines:push(lines curArr)
+				curArr = Array()
+				line_count = line_count + 1
+			else
+				curTxt = curTxt + index(content i)
+			fi
+			fi
+		done
+	}
+	fn writeFile {
+		let file = $0
+		let j = 0
+		let line
+		let toWrite = "\0"
+		for (let i=0;i<lines:len(lines);i=i+1) do
+			line = index(lines:data i)
+			for (j=0;j<line:len(line);j=j+1) do
+				if j>0 then
+					toWrite = toWrite + ","
+				fi
+				toWrite = toWrite + index(line:data j) 
+			done
+			toWrite = toWrite + "\n"
+		done
+		write(file toWrite)
+	}
+}
+
+# let fileName = "idk.csv"
+
+# let idk = Csv()
+# idk:loadFile(fileName)
+# idk:put(0 0 "name")
+# idk:writeFile(fileName)
+
