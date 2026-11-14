@@ -72,11 +72,13 @@ class Csv {
 				curArr:push(curArr curTxt)
 				curTxt = "\0"
 			else if index(content i)=="\n" then
-				curArr:push(curArr curTxt)
-				curTxt = "\0"
-				lines:push(lines curArr)
-				curArr = Array()
-				line_count = line_count + 1
+				if curTxt!="\0" then
+					curArr:push(curArr curTxt)
+					curTxt = "\0"
+					lines:push(lines curArr)
+					curArr = Array()
+					line_count = line_count + 1
+				fi	
 			else
 				if index(content i)=="\"" then
 					isOnTxt = !isOnTxt
