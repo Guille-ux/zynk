@@ -23,9 +23,11 @@ class Csv {
 	}
 	fn delLine {
 		lines:pop(lines)
+		line_count = line_count - 1
 	}
 	fn addLine {
 		lines:push(lines Array())
+		line_count = line_count + 1
 	}
 	fn addRow {
 		let x = $0
