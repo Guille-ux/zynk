@@ -118,10 +118,10 @@ class Csv {
 	}
 }
 
- let fileName = "idk.csv"
+ # let fileName = "idk.csv"
 
- let idk = Csv()
- idk:loadFile(fileName)
- idk:put(0 0 "name")
- idk:writeFile(fileName)
+ # let idk = Csv()
+ # idk:loadFile(fileName)
+ # idk:put(0 0 "name")
+ # idk:writeFile(fileName)
 
