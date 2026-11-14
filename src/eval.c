@@ -120,20 +120,18 @@ void unlinkObj(GCObj *obj) {
 void delObj(GCObj *obj) {
 	lock=true;
 	unlinkObj(obj);
-	if (obj->obj.magic==ZYNK_MAGIC_CLASS) {
-		void *ptr = (void*)((size_t)obj+sizeof(GCObj));
-		killShellCtx((EvalCtx*)ptr);
-	} else if (obj->obj.magic==ZYNK_MAGIC_INSTANCE) {
+	// we don't free the class_obj, yk, like it's ctx
+	if (obj->obj.magic==ZYNK_MAGIC_INSTANCE) {
 		InstanceObj *inst = (InstanceObj *)obj;
 		killShellCtx(inst->ctx);
 	} else if (obj->obj.magic==ZYNK_MAGIC_ARRAY) {
-		ArrayObj *obj = (ArrayObj*)obj;
-		void *ptr = (void*)obj->items;
-		if (obj->capacity==0) {
+		ArrayObj *array = (ArrayObj*)obj;
+		void *ptr = (void*)array->items;
+		if (array->capacity==0) {
 
 		} else {
-			for (int i=0;i<obj->size;i++) {
-				ref_del(obj->items[i]);
+			for (int i=0;i<array->size;i++) {
+				ref_del(array->items[i]);
 			}
 			kfree(ptr);
 		}
