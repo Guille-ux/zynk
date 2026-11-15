@@ -71,7 +71,7 @@ class Csv {
 			if index(content i)=="," and !isOnTxt then
 				curArr:push(curArr curTxt)
 				curTxt = "\0"
-			else if index(content i)=="\n" then
+			else if index(content i)=="\n" and !isOnTxt then
 				if curTxt!="\0" then
 					curArr:push(curArr curTxt)
 					curTxt = "\0"
@@ -81,7 +81,11 @@ class Csv {
 				fi	
 			else
 				if index(content i)=="\"" then
-					isOnTxt = !isOnTxt
+					if index(content i+1)=="\"" then
+						i = i + 1
+					else
+						isOnTxt = !isOnTxt
+					fi
 				fi
 				curTxt = curTxt + index(content i)
 			fi
