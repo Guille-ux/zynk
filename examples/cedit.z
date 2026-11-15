@@ -1,4 +1,4 @@
-#
+#!/bin/zynk
 # Csv Editor !!!
 # Guillermo Leira Temes, i mean i made it, i wanna let you know
 # 
@@ -188,6 +188,10 @@ do {
 		j = float(input("\tRow: "))
 		txt = input("\tVal: ")
 		mydb:put(i j txt)
+	else if command == "get" then
+		i = float(input("\tLine: "))
+		j = float(input("\tRow: "))
+		echo "Cell: " + mydb:get(i j)
 	else if command == "help" then
 		echo "Commands: "
 		echo "\tq -> exits"
@@ -198,7 +202,8 @@ do {
 		echo "\tdl -> removes the last line"
 		echo "\tdr -> removes the last row on a line"
 		echo "\tset -> puts a val in a cell"
-	fi fi fi fi fi fi fi fi
+		echo "\tget -> prints the val of a cell"
+	fi fi fi fi fi fi fi fi fi
 } while 1
 
 
