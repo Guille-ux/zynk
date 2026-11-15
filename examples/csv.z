@@ -33,7 +33,7 @@ class Csv {
 		let x = $0
 		let a = index(lines:data x)
 
-		a:push(a Array())
+		a:push(a "null")
 	}
 	fn delRow {
 		let x = $0
