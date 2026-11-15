@@ -1,0 +1,204 @@
+#
+# Csv Editor !!!
+# Guillermo Leira Temes, i mean i made it, i wanna let you know
+# 
+
+let version = "1.0.0"
+
+class Csv {
+	let line_count = 0
+	let lines = Array()	
+	fn swapLine {
+		let x = $0
+		let y = $1
+		lines:swap(lines x y)
+	}
+	fn swapRow {
+		let x = $0
+
+		let y = $1
+		let z = $2
+
+		let a = index(lines:data x)
+
+		a:swap(a y z)
+	}
+	fn delLine {
+		lines:pop(lines)
+		line_count = line_count - 1
+	}
+	fn addLine {
+		lines:push(lines Array())
+		line_count = line_count + 1
+	}
+	fn addRow {
+		let x = $0
+		let a = index(lines:data x)
+
+		a:push(a "null")
+	}
+	fn delRow {
+		let x = $0
+		let a = index(lines:data x)
+		a:pop(a)
+	}
+	fn put {
+		let x = $0
+		let y = $1
+		let val = $2
+
+		let a = index(lines:data x)
+		set(a:data y val)
+	}
+	fn get {
+		let x = $0
+		let y = $1
+
+		let a = index(lines:data x)
+		return index(a:data y)
+	}
+	fn loadFile {
+		let file = $0
+		let content = read(file)
+		let curArr = Array()
+		let curTxt = "\0"
+		let isOnTxt = 0
+		for (let i=0;i<len(content);i=i+1) do
+			if index(content i)=="\r" then
+				i = i + 1
+				if i >= len(content) then
+					break
+				fi
+			fi
+			if index(content i)=="," and !isOnTxt then
+				curArr:push(curArr curTxt)
+				curTxt = "\0"
+			else if index(content i)=="\n" then
+				if curTxt!="\0" then
+					curArr:push(curArr curTxt)
+					curTxt = "\0"
+					lines:push(lines curArr)
+					curArr = Array()
+					line_count = line_count + 1
+				fi
+			else
+				if index(content i)=="\"" then
+					isOnTxt = !isOnTxt
+				fi
+				curTxt = curTxt + index(content i)
+			fi
+			fi
+		done
+		if curTxt!="\0" then
+			lines:push(lines curTxt)
+			line_count = line_count + 1
+		fi
+	}
+	fn writeFile {
+		let file = $0
+		let j = 0
+		let line
+		let toWrite = "\0"
+		let comma = 0
+		let k = 0
+		for (let i=0;i<lines:len(lines);i=i+1) do
+			line = index(lines:data i)
+			for (j=0;j<line:len(line);j=j+1) do
+				if j>0 then
+					toWrite = toWrite + ","
+				fi
+				for (k=0;k<len(index(line:data j));k=k+1) do
+					if index(index(line:data j) k)=="," then
+						comma = 1
+						break
+					fi
+				done
+				if comma then toWrite = toWrite + "\"" fi
+				toWrite = toWrite + index(line:data j)
+				if comma then toWrite = toWrite + "\"" fi
+				comma = 0
+			done
+			toWrite = toWrite + "\n"
+		done
+		write(file toWrite)
+	}
+}
+
+
+
+echo "Csv Zeditor (version: " + version + ")"
+
+let file # the file we are  # the file we are openingg
+
+if arg(0) > 2 then
+	# ok, we can probably do something about it
+	file = arg(3)
+else 
+	file = input("File?: ")
+fi
+
+let ct = read(file)
+
+echo "Editing File: " + file
+
+let command 
+let txt
+let rw
+let i
+let mydb = Csv()
+let j
+
+if ct != "\0" then
+	mydb:loadFile(file)
+fi
+
+do {
+	command = input(">>> ")
+	if command == "q" then
+		echo "Exiting..."
+		return 0
+	
+	fi
+	if command == "w" then
+		mydb:writeFile(file)
+	else if command == "print" then
+		for (i=0;i<mydb:line_count;i=i+1) do
+			txt = "\0"
+			rw = index(mydb:lines:data i)
+			for (j=0;j<rw:len(rw);j=j+1) do
+				if j>0 then
+					txt = txt + "\t|\t"
+				fi
+				txt = txt + mydb:get(i j)
+			done
+		echo txt
+		done
+	else if command == "nl" then # new line
+		mydb:addLine()
+	else if command == "nr" then
+		j = float(input("\tLine: "))
+		mydb:addRow(j)
+	else if command == "dl" then
+		mydb:delLine()
+	else if command == "dr" then
+		j = float(input("\tLine: "))
+		mydb:delRow(j)
+	else if command == "set" then
+		i = float(input("\tLine: "))
+		j = float(input("\tRow: "))
+		txt = input("\tVal: ")
+		mydb:put(i j txt)
+	else if command == "help" then
+		echo "Commands: "
+		echo "\tq -> exits"
+		echo "\tw -> saves the file"
+		echo "\tprint -> prints the table"
+		echo "\tnl -> appends a new line"
+		echo "\tnr -> appends a new row on a line"
+		echo "\tdl -> removes the last line"
+		echo "\tdr -> removes the last row on a line"
+		echo "\tset -> puts a val in a cell"
+	fi fi fi fi fi fi fi fi
+} while 1
+
+
