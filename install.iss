@@ -1,6 +1,6 @@
 [Setup]
 AppName=Zynk
-AppVersion=1.9.1
+AppVersion=1.9.2
 AppPublisher=Guille
 DefaultDirName={localappdata}\Zynk
 DefaultGroupName=Zynk

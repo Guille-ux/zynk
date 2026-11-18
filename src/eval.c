@@ -973,6 +973,23 @@ static ShellValue evalUnaryExpr(ASTNode *expr, EvalCtx *ctx) {
 
 static ShellValue evalBinExpr(ASTNode *expr, EvalCtx *ctx) {
 	ShellValue left = evalExpr(expr->data.binary_expr.left, ctx);
+	
+	LTokenType op = expr->data.binary_expr.op;
+
+	if (op == TOKEN_AND || op == TOKEN_OR) {
+		if (left.type == VAL_NONE)
+			return left;
+
+		bool left_true = isTruly(left);
+		ref_del(left);
+
+		if (op == TOKEN_AND && !left_true)
+			return newNumVal(0);
+
+		if (op == TOKEN_OR && left_true)
+			return newNumVal(1);
+	}
+
 	if (left.type==VAL_NONE) {
 		return left; // por pereza a crear un nuevo objeto
 	}
